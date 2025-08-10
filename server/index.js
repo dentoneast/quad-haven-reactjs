@@ -38,6 +38,7 @@ async function initializeDatabase() {
         address TEXT,
         profile_image_url TEXT,
         is_verified BOOLEAN DEFAULT FALSE,
+        user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -51,6 +52,90 @@ async function initializeDatabase() {
         token_hash VARCHAR(255) NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create premises table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS premises (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        address TEXT NOT NULL,
+        city VARCHAR(100) NOT NULL,
+        state VARCHAR(50) NOT NULL,
+        zip_code VARCHAR(20) NOT NULL,
+        country VARCHAR(100) DEFAULT 'USA',
+        property_type VARCHAR(50) NOT NULL CHECK (property_type IN ('apartment', 'house', 'condo', 'townhouse', 'duplex', 'studio')),
+        total_units INTEGER,
+        year_built INTEGER,
+        amenities TEXT[],
+        description TEXT,
+        lessor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create rental_units table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rental_units (
+        id SERIAL PRIMARY KEY,
+        unit_number VARCHAR(50) NOT NULL,
+        premises_id INTEGER REFERENCES premises(id) ON DELETE CASCADE,
+        unit_type VARCHAR(50) NOT NULL CHECK (unit_type IN ('studio', '1BR', '2BR', '3BR', '4BR+')),
+        square_feet INTEGER,
+        bedrooms INTEGER,
+        bathrooms DECIMAL(3,1),
+        floor_number INTEGER,
+        rent_amount DECIMAL(10,2) NOT NULL,
+        security_deposit DECIMAL(10,2),
+        utilities_included BOOLEAN DEFAULT FALSE,
+        available_from DATE,
+        is_available BOOLEAN DEFAULT TRUE,
+        features TEXT[],
+        images TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(premises_id, unit_number)
+      )
+    `);
+
+    // Create leases table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS leases (
+        id SERIAL PRIMARY KEY,
+        rental_unit_id INTEGER REFERENCES rental_units(id) ON DELETE CASCADE,
+        lessor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        lessee_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        monthly_rent DECIMAL(10,2) NOT NULL,
+        security_deposit DECIMAL(10,2),
+        lease_status VARCHAR(20) DEFAULT 'active' CHECK (lease_status IN ('draft', 'active', 'expired', 'terminated')),
+        terms_conditions TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CHECK (end_date > start_date)
+      )
+    `);
+
+    // Create rental_listings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rental_listings (
+        id SERIAL PRIMARY KEY,
+        rental_unit_id INTEGER REFERENCES rental_units(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        monthly_rent DECIMAL(10,2) NOT NULL,
+        available_from DATE,
+        listing_status VARCHAR(20) DEFAULT 'active' CHECK (listing_status IN ('draft', 'active', 'pending', 'rented', 'inactive')),
+        featured BOOLEAN DEFAULT FALSE,
+        views_count INTEGER DEFAULT 0,
+        contact_phone VARCHAR(20),
+        contact_email VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -100,7 +185,8 @@ app.post('/api/auth/register', [
   body('lastName').notEmpty().trim(),
   body('phone').optional().isMobilePhone(),
   body('dateOfBirth').optional().isISO8601(),
-  body('address').optional().trim()
+  body('address').optional().trim(),
+  body('userType').optional().isIn(['tenant', 'landlord', 'admin'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -108,7 +194,7 @@ app.post('/api/auth/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, firstName, lastName, phone, dateOfBirth, address } = req.body;
+    const { email, password, firstName, lastName, phone, dateOfBirth, address, userType } = req.body;
 
     // Check if user already exists
     const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -122,10 +208,10 @@ app.post('/api/auth/register', [
 
     // Insert new user
     const newUser = await pool.query(`
-      INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, email, first_name, last_name, phone, date_of_birth, address, created_at
-    `, [email, passwordHash, firstName, lastName, phone, dateOfBirth, address]);
+      INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address, user_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, email, first_name, last_name, phone, date_of_birth, address, user_type, created_at
+    `, [email, passwordHash, firstName, lastName, phone, dateOfBirth, address, userType || 'tenant']);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -344,6 +430,997 @@ app.put('/api/user/change-password', authenticateToken, [
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Premises endpoints
+app.post('/api/premises', authenticateToken, [
+  body('name').notEmpty().trim(),
+  body('address').notEmpty().trim(),
+  body('city').notEmpty().trim(),
+  body('state').notEmpty().trim(),
+  body('zipCode').notEmpty().trim(),
+  body('country').optional().trim(),
+  body('propertyType').isIn(['apartment', 'house', 'condo', 'townhouse', 'duplex', 'studio']),
+  body('totalUnits').optional().isInt({ min: 1 }),
+  body('yearBuilt').optional().isInt({ min: 1800, max: new Date().getFullYear() }),
+  body('amenities').optional().isArray(),
+  body('description').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { name, address, city, state, zipCode, country, propertyType, totalUnits, yearBuilt, amenities, description } = req.body;
+
+    const newPremises = await pool.query(`
+      INSERT INTO premises (name, address, city, state, zip_code, country, property_type, total_units, year_built, amenities, description, lessor_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [name, address, city, state, zipCode, country || 'USA', propertyType, totalUnits, yearBuilt, amenities || [], description, req.user.userId]);
+
+    res.status(201).json({
+      message: 'Premises created successfully',
+      premises: newPremises.rows[0]
+    });
+  } catch (error) {
+    console.error('Create premises error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/premises', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, city, state, propertyType, minPrice, maxPrice } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = 'WHERE p.is_active = TRUE';
+    const values = [];
+    let paramCount = 1;
+
+    if (city) {
+      whereClause += ` AND p.city ILIKE $${paramCount}`;
+      values.push(`%${city}%`);
+      paramCount++;
+    }
+    if (state) {
+      whereClause += ` AND p.state ILIKE $${paramCount}`;
+      values.push(`%${state}%`);
+      paramCount++;
+    }
+    if (propertyType) {
+      whereClause += ` AND p.property_type = $${paramCount}`;
+      values.push(propertyType);
+      paramCount++;
+    }
+
+    const premises = await pool.query(`
+      SELECT p.*, u.first_name as lessor_name, u.email as lessor_email,
+             COUNT(ru.id) as total_units,
+             COUNT(CASE WHEN ru.is_available = TRUE THEN 1 END) as available_units,
+             MIN(ru.rent_amount) as min_rent,
+             MAX(ru.rent_amount) as max_rent
+      FROM premises p
+      LEFT JOIN users u ON p.lessor_id = u.id
+      LEFT JOIN rental_units ru ON p.id = ru.premises_id
+      ${whereClause}
+      GROUP BY p.id, u.first_name, u.email
+      ORDER BY p.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `, [...values, limit, offset]);
+
+    const totalCount = await pool.query(`
+      SELECT COUNT(DISTINCT p.id) FROM premises p ${whereClause}
+    `, values);
+
+    res.json({
+      premises: premises.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get premises error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/premises/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const premises = await pool.query(`
+      SELECT p.*, u.first_name as lessor_name, u.email as lessor_email, u.phone as lessor_phone
+      FROM premises p
+      LEFT JOIN users u ON p.lessor_id = u.id
+      WHERE p.id = $1 AND p.is_active = TRUE
+    `, [id]);
+
+    if (premises.rows.length === 0) {
+      return res.status(404).json({ error: 'Premises not found' });
+    }
+
+    res.json({ premises: premises.rows[0] });
+  } catch (error) {
+    console.error('Get premises by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/premises/:id', authenticateToken, [
+  body('name').optional().notEmpty().trim(),
+  body('address').optional().notEmpty().trim(),
+  body('city').optional().notEmpty().trim(),
+  body('state').optional().notEmpty().trim(),
+  body('zipCode').optional().notEmpty().trim(),
+  body('country').optional().trim(),
+  body('propertyType').optional().isIn(['apartment', 'house', 'condo', 'townhouse', 'duplex', 'studio']),
+  body('totalUnits').optional().isInt({ min: 1 }),
+  body('yearBuilt').optional().isInt({ min: 1800, max: new Date().getFullYear() }),
+  body('amenities').optional().isArray(),
+  body('description').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Check if user owns the premises
+    const ownershipCheck = await pool.query(
+      'SELECT id FROM premises WHERE id = $1 AND lessor_id = $2',
+      [id, req.user.userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        const dbKey = key === 'zipCode' ? 'zip_code' : 
+                     key === 'propertyType' ? 'property_type' : 
+                     key === 'totalUnits' ? 'total_units' : 
+                     key === 'yearBuilt' ? 'year_built' : key;
+        updateFields.push(`${dbKey} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    });
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const updatedPremises = await pool.query(
+      `UPDATE premises SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      values
+    );
+
+    res.json({
+      message: 'Premises updated successfully',
+      premises: updatedPremises.rows[0]
+    });
+  } catch (error) {
+    console.error('Update premises error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/premises/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user owns the premises
+    const ownershipCheck = await pool.query(
+      'SELECT id FROM premises WHERE id = $1 AND lessor_id = $2',
+      [id, req.user.userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Soft delete by setting is_active to false
+    await pool.query(
+      'UPDATE premises SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [id]
+    );
+
+    res.json({ message: 'Premises deleted successfully' });
+  } catch (error) {
+    console.error('Delete premises error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Rental Units endpoints
+app.post('/api/rental-units', authenticateToken, [
+  body('unitNumber').notEmpty().trim(),
+  body('premisesId').isInt({ min: 1 }),
+  body('unitType').isIn(['studio', '1BR', '2BR', '3BR', '4BR+']),
+  body('squareFeet').optional().isInt({ min: 1 }),
+  body('bedrooms').optional().isInt({ min: 0 }),
+  body('bathrooms').optional().isFloat({ min: 0 }),
+  body('floorNumber').optional().isInt({ min: 0 }),
+  body('rentAmount').isFloat({ min: 0 }),
+  body('securityDeposit').optional().isFloat({ min: 0 }),
+  body('utilitiesIncluded').optional().isBoolean(),
+  body('availableFrom').optional().isISO8601(),
+  body('features').optional().isArray(),
+  body('images').optional().isArray()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { unitNumber, premisesId, unitType, squareFeet, bedrooms, bathrooms, floorNumber, rentAmount, securityDeposit, utilitiesIncluded, availableFrom, features, images } = req.body;
+
+    // Check if user owns the premises
+    const ownershipCheck = await pool.query(
+      'SELECT id FROM premises WHERE id = $1 AND lessor_id = $2',
+      [premisesId, req.user.userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const newUnit = await pool.query(`
+      INSERT INTO rental_units (unit_number, premises_id, unit_type, square_feet, bedrooms, bathrooms, floor_number, rent_amount, security_deposit, utilities_included, available_from, features, images)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *
+    `, [unitNumber, premisesId, unitType, squareFeet, bedrooms, bathrooms, floorNumber, rentAmount, securityDeposit, utilitiesIncluded || false, availableFrom, features || [], images || []]);
+
+    res.status(201).json({
+      message: 'Rental unit created successfully',
+      unit: newUnit.rows[0]
+    });
+  } catch (error) {
+    console.error('Create rental unit error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/rental-units', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, premisesId, unitType, minRent, maxRent, available, city, state } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = 'WHERE ru.id IS NOT NULL';
+    const values = [];
+    let paramCount = 1;
+
+    if (premisesId) {
+      whereClause += ` AND ru.premises_id = $${paramCount}`;
+      values.push(premisesId);
+      paramCount++;
+    }
+    if (unitType) {
+      whereClause += ` AND ru.unit_type = $${paramCount}`;
+      values.push(unitType);
+      paramCount++;
+    }
+    if (minRent) {
+      whereClause += ` AND ru.rent_amount >= $${paramCount}`;
+      values.push(parseFloat(minRent));
+      paramCount++;
+    }
+    if (maxRent) {
+      whereClause += ` AND ru.rent_amount <= $${paramCount}`;
+      values.push(parseFloat(maxRent));
+      paramCount++;
+    }
+    if (available === 'true') {
+      whereClause += ` AND ru.is_available = TRUE`;
+    }
+    if (city) {
+      whereClause += ` AND p.city ILIKE $${paramCount}`;
+      values.push(`%${city}%`);
+      paramCount++;
+    }
+    if (state) {
+      whereClause += ` AND p.state ILIKE $${paramCount}`;
+      values.push(`%${state}%`);
+      paramCount++;
+    }
+
+    const units = await pool.query(`
+      SELECT ru.*, p.name as premises_name, p.address as premises_address, p.city, p.state, p.zip_code,
+             u.first_name as lessor_name, u.email as lessor_email
+      FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users u ON p.lessor_id = u.id
+      ${whereClause}
+      ORDER BY ru.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `, [...values, limit, offset]);
+
+    const totalCount = await pool.query(`
+      SELECT COUNT(*) FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      ${whereClause}
+    `, values);
+
+    res.json({
+      units: units.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get rental units error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/rental-units/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const unit = await pool.query(`
+      SELECT ru.*, p.name as premises_name, p.address as premises_address, p.city, p.state, p.zip_code,
+             u.first_name as lessor_name, u.email as lessor_email, u.phone as lessor_phone
+      FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users u ON p.lessor_id = u.id
+      WHERE ru.id = $1
+    `, [id]);
+
+    if (unit.rows.length === 0) {
+      return res.status(404).json({ error: 'Rental unit not found' });
+    }
+
+    res.json({ unit: unit.rows[0] });
+  } catch (error) {
+    console.error('Get rental unit by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/rental-units/:id', authenticateToken, [
+  body('unitNumber').optional().notEmpty().trim(),
+  body('unitType').optional().isIn(['studio', '1BR', '2BR', '3BR', '4BR+']),
+  body('squareFeet').optional().isInt({ min: 1 }),
+  body('bedrooms').optional().isInt({ min: 0 }),
+  body('bathrooms').optional().isFloat({ min: 0 }),
+  body('floorNumber').optional().isInt({ min: 0 }),
+  body('rentAmount').optional().isFloat({ min: 0 }),
+  body('securityDeposit').optional().isFloat({ min: 0 }),
+  body('utilitiesIncluded').optional().isBoolean(),
+  body('availableFrom').optional().isISO8601(),
+  body('isAvailable').optional().isBoolean(),
+  body('features').optional().isArray(),
+  body('images').optional().isArray()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Check if user owns the rental unit
+    const ownershipCheck = await pool.query(`
+      SELECT ru.id FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE ru.id = $1 AND p.lessor_id = $2
+    `, [id, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        const dbKey = key === 'unitNumber' ? 'unit_number' : 
+                     key === 'unitType' ? 'unit_type' : 
+                     key === 'squareFeet' ? 'square_feet' : 
+                     key === 'rentAmount' ? 'rent_amount' : 
+                     key === 'securityDeposit' ? 'security_deposit' : 
+                     key === 'utilitiesIncluded' ? 'utilities_included' : 
+                     key === 'availableFrom' ? 'available_from' : 
+                     key === 'isAvailable' ? 'is_available' : key;
+        updateFields.push(`${dbKey} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    });
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const updatedUnit = await pool.query(
+      `UPDATE rental_units SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      values
+    );
+
+    res.json({
+      message: 'Rental unit updated successfully',
+      unit: updatedUnit.rows[0]
+    });
+  } catch (error) {
+    console.error('Update rental unit error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/rental-units/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user owns the rental unit
+    const ownershipCheck = await pool.query(`
+      SELECT ru.id FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE ru.id = $1 AND p.lessor_id = $2
+    `, [id, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await pool.query('DELETE FROM rental_units WHERE id = $1', [id]);
+
+    res.json({ message: 'Rental unit deleted successfully' });
+  } catch (error) {
+    console.error('Delete rental unit error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Leases endpoints
+app.post('/api/leases', authenticateToken, [
+  body('rentalUnitId').isInt({ min: 1 }),
+  body('lesseeId').isInt({ min: 1 }),
+  body('startDate').isISO8601(),
+  body('endDate').isISO8601(),
+  body('monthlyRent').isFloat({ min: 0 }),
+  body('securityDeposit').optional().isFloat({ min: 0 }),
+  body('termsConditions').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { rentalUnitId, lesseeId, startDate, endDate, monthlyRent, securityDeposit, termsConditions } = req.body;
+
+    // Check if user owns the rental unit
+    const ownershipCheck = await pool.query(`
+      SELECT ru.id FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE ru.id = $1 AND p.lessor_id = $2
+    `, [rentalUnitId, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if rental unit is available
+    const availabilityCheck = await pool.query(
+      'SELECT is_available FROM rental_units WHERE id = $1',
+      [rentalUnitId]
+    );
+
+    if (availabilityCheck.rows.length === 0 || !availabilityCheck.rows[0].is_available) {
+      return res.status(400).json({ error: 'Rental unit is not available' });
+    }
+
+    // Check if dates are valid
+    if (new Date(startDate) >= new Date(endDate)) {
+      return res.status(400).json({ error: 'End date must be after start date' });
+    }
+
+    const newLease = await pool.query(`
+      INSERT INTO leases (rental_unit_id, lessor_id, lessee_id, start_date, end_date, monthly_rent, security_deposit, terms_conditions)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `, [rentalUnitId, req.user.userId, lesseeId, startDate, endDate, monthlyRent, securityDeposit, termsConditions]);
+
+    // Update rental unit availability
+    await pool.query(
+      'UPDATE rental_units SET is_available = FALSE WHERE id = $1',
+      [rentalUnitId]
+    );
+
+    res.status(201).json({
+      message: 'Lease created successfully',
+      lease: newLease.rows[0]
+    });
+  } catch (error) {
+    console.error('Create lease error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/leases', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, role } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = 'WHERE 1=1';
+    const values = [];
+    let paramCount = 1;
+
+    if (status) {
+      whereClause += ` AND l.lease_status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    // Filter by user role (lessor or lessee)
+    if (role === 'lessor') {
+      whereClause += ` AND l.lessor_id = $${paramCount}`;
+      values.push(req.user.userId);
+      paramCount++;
+    } else if (role === 'lessee') {
+      whereClause += ` AND l.lessee_id = $${paramCount}`;
+      values.push(req.user.userId);
+      paramCount++;
+    } else {
+      // Show all leases where user is involved
+      whereClause += ` AND (l.lessor_id = $${paramCount} OR l.lessee_id = $${paramCount})`;
+      values.push(req.user.userId);
+      paramCount++;
+    }
+
+    const leases = await pool.query(`
+      SELECT l.*, 
+             ru.unit_number, ru.unit_type, ru.square_feet, ru.bedrooms, ru.bathrooms,
+             p.name as premises_name, p.address as premises_address, p.city, p.state,
+             lessor.first_name as lessor_first_name, lessor.last_name as lessor_last_name, lessor.email as lessor_email,
+             lessee.first_name as lessee_first_name, lessee.last_name as lessee_last_name, lessee.email as lessee_email
+      FROM leases l
+      JOIN rental_units ru ON l.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users lessor ON l.lessor_id = lessor.id
+      JOIN users lessee ON l.lessee_id = lessee.id
+      ${whereClause}
+      ORDER BY l.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `, [...values, limit, offset]);
+
+    const totalCount = await pool.query(`
+      SELECT COUNT(*) FROM leases l ${whereClause}
+    `, values);
+
+    res.json({
+      leases: leases.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get leases error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/leases/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const lease = await pool.query(`
+      SELECT l.*, 
+             ru.unit_number, ru.unit_type, ru.square_feet, ru.bedrooms, ru.bathrooms,
+             p.name as premises_name, p.address as premises_address, p.city, p.state,
+             lessor.first_name as lessor_first_name, lessor.last_name as lessor_last_name, lessor.email as lessor_email, lessor.phone as lessor_phone,
+             lessee.first_name as lessee_first_name, lessee.last_name as lessee_last_name, lessee.email as lessee_email, lessee.phone as lessee_phone
+      FROM leases l
+      JOIN rental_units ru ON l.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users lessor ON l.lessor_id = lessor.id
+      JOIN users lessee ON l.lessee_id = lessee.id
+      WHERE l.id = $1
+    `, [id]);
+
+    if (lease.rows.length === 0) {
+      return res.status(404).json({ error: 'Lease not found' });
+    }
+
+    // Check if user has access to this lease
+    const leaseData = lease.rows[0];
+    if (leaseData.lessor_id !== req.user.userId && leaseData.lessee_id !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({ lease: leaseData });
+  } catch (error) {
+    console.error('Get lease by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/leases/:id', authenticateToken, [
+  body('startDate').optional().isISO8601(),
+  body('endDate').optional().isISO8601(),
+  body('monthlyRent').optional().isFloat({ min: 0 }),
+  body('securityDeposit').optional().isFloat({ min: 0 }),
+  body('leaseStatus').optional().isIn(['draft', 'active', 'expired', 'terminated']),
+  body('termsConditions').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Check if user owns the lease
+    const ownershipCheck = await pool.query(
+      'SELECT id FROM leases WHERE id = $1 AND lessor_id = $2',
+      [id, req.user.userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if dates are valid
+    if (updateData.startDate && updateData.endDate && new Date(updateData.startDate) >= new Date(updateData.endDate)) {
+      return res.status(400).json({ error: 'End date must be after start date' });
+    }
+
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        const dbKey = key === 'startDate' ? 'start_date' : 
+                     key === 'endDate' ? 'end_date' : 
+                     key === 'monthlyRent' ? 'monthly_rent' : 
+                     key === 'securityDeposit' ? 'security_deposit' : 
+                     key === 'leaseStatus' ? 'lease_status' : 
+                     key === 'termsConditions' ? 'terms_conditions' : key;
+        updateFields.push(`${dbKey} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    });
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const updatedLease = await pool.query(
+      `UPDATE leases SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      values
+    );
+
+    res.json({
+      message: 'Lease updated successfully',
+      lease: updatedLease.rows[0]
+    });
+  } catch (error) {
+    console.error('Update lease error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/leases/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user owns the lease
+    const ownershipCheck = await pool.query(
+      'SELECT id, rental_unit_id FROM leases WHERE id = $1 AND lessor_id = $2',
+      [id, req.user.userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Update rental unit availability
+    await pool.query(
+      'UPDATE rental_units SET is_available = TRUE WHERE id = $1',
+      [ownershipCheck.rows[0].rental_unit_id]
+    );
+
+    await pool.query('DELETE FROM leases WHERE id = $1', [id]);
+
+    res.json({ message: 'Lease deleted successfully' });
+  } catch (error) {
+    console.error('Delete lease error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Rental Listings endpoints
+app.post('/api/rental-listings', authenticateToken, [
+  body('rentalUnitId').isInt({ min: 1 }),
+  body('title').notEmpty().trim(),
+  body('description').optional().trim(),
+  body('monthlyRent').isFloat({ min: 0 }),
+  body('availableFrom').optional().isISO8601(),
+  body('listingStatus').optional().isIn(['draft', 'active', 'pending', 'rented', 'inactive']),
+  body('featured').optional().isBoolean(),
+  body('contactPhone').optional().trim(),
+  body('contactEmail').optional().isEmail().normalizeEmail()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { rentalUnitId, title, description, monthlyRent, availableFrom, listingStatus, featured, contactPhone, contactEmail } = req.body;
+
+    // Check if user owns the rental unit
+    const ownershipCheck = await pool.query(`
+      SELECT ru.id FROM rental_units ru
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE ru.id = $1 AND p.lessor_id = $2
+    `, [rentalUnitId, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const newListing = await pool.query(`
+      INSERT INTO rental_listings (rental_unit_id, title, description, monthly_rent, available_from, listing_status, featured, contact_phone, contact_email)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `, [rentalUnitId, title, description, monthlyRent, availableFrom, listingStatus || 'draft', featured || false, contactPhone, contactEmail]);
+
+    res.status(201).json({
+      message: 'Rental listing created successfully',
+      listing: newListing.rows[0]
+    });
+  } catch (error) {
+    console.error('Create rental listing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/rental-listings', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, featured, minRent, maxRent, city, state, unitType, available } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = 'WHERE rl.listing_status = \'active\'';
+    const values = [];
+    let paramCount = 1;
+
+    if (status) {
+      whereClause = whereClause.replace('rl.listing_status = \'active\'', `rl.listing_status = $${paramCount}`);
+      values.push(status);
+      paramCount++;
+    }
+    if (featured === 'true') {
+      whereClause += ` AND rl.featured = TRUE`;
+    }
+    if (minRent) {
+      whereClause += ` AND rl.monthly_rent >= $${paramCount}`;
+      values.push(parseFloat(minRent));
+      paramCount++;
+    }
+    if (maxRent) {
+      whereClause += ` AND rl.monthly_rent <= $${paramCount}`;
+      values.push(parseFloat(maxRent));
+      paramCount++;
+    }
+    if (city) {
+      whereClause += ` AND p.city ILIKE $${paramCount}`;
+      values.push(`%${city}%`);
+      paramCount++;
+    }
+    if (state) {
+      whereClause += ` AND p.state ILIKE $${paramCount}`;
+      values.push(`%${state}%`);
+      paramCount++;
+    }
+    if (unitType) {
+      whereClause += ` AND ru.unit_type = $${paramCount}`;
+      values.push(unitType);
+      paramCount++;
+    }
+    if (available === 'true') {
+      whereClause += ` AND ru.is_available = TRUE`;
+    }
+
+    const listings = await pool.query(`
+      SELECT rl.*, 
+             ru.unit_number, ru.unit_type, ru.square_feet, ru.bedrooms, ru.bathrooms, ru.features, ru.images,
+             p.name as premises_name, p.address as premises_address, p.city, p.state, p.zip_code, p.property_type, p.amenities,
+             u.first_name as lessor_name, u.email as lessor_email
+      FROM rental_listings rl
+      JOIN rental_units ru ON rl.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users u ON p.lessor_id = u.id
+      ${whereClause}
+      ORDER BY rl.featured DESC, rl.views_count DESC, rl.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `, [...values, limit, offset]);
+
+    const totalCount = await pool.query(`
+      SELECT COUNT(*) FROM rental_listings rl
+      JOIN rental_units ru ON rl.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      ${whereClause}
+    `, values);
+
+    res.json({
+      listings: listings.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get rental listings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/rental-listings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const listing = await pool.query(`
+      SELECT rl.*, 
+             ru.unit_number, ru.unit_type, ru.square_feet, ru.bedrooms, ru.bathrooms, ru.features, ru.images,
+             p.name as premises_name, p.address as premises_address, p.city, p.state, p.zip_code, p.property_type, p.amenities,
+             u.first_name as lessor_name, u.email as lessor_email, u.phone as lessor_phone
+      FROM rental_listings rl
+      JOIN rental_units ru ON rl.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      JOIN users u ON p.lessor_id = u.id
+      WHERE rl.id = $1
+    `, [id]);
+
+    if (listing.rows.length === 0) {
+      return res.status(404).json({ error: 'Rental listing not found' });
+    }
+
+    // Increment view count
+    await pool.query(
+      'UPDATE rental_listings SET views_count = views_count + 1 WHERE id = $1',
+      [id]
+    );
+
+    res.json({ listing: listing.rows[0] });
+  } catch (error) {
+    console.error('Get rental listing by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/rental-listings/:id', authenticateToken, [
+  body('title').optional().notEmpty().trim(),
+  body('description').optional().trim(),
+  body('monthlyRent').optional().isFloat({ min: 0 }),
+  body('availableFrom').optional().isISO8601(),
+  body('listingStatus').optional().isIn(['draft', 'active', 'pending', 'rented', 'inactive']),
+  body('featured').optional().isBoolean(),
+  body('contactPhone').optional().trim(),
+  body('contactEmail').optional().isEmail().normalizeEmail()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Check if user owns the rental listing
+    const ownershipCheck = await pool.query(`
+      SELECT rl.id FROM rental_listings rl
+      JOIN rental_units ru ON rl.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE rl.id = $1 AND p.lessor_id = $2
+    `, [id, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        const dbKey = key === 'monthlyRent' ? 'monthly_rent' : 
+                     key === 'availableFrom' ? 'available_from' : 
+                     key === 'listingStatus' ? 'listing_status' : 
+                     key === 'contactPhone' ? 'contact_phone' : 
+                     key === 'contactEmail' ? 'contact_email' : key;
+        updateFields.push(`${dbKey} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    });
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const updatedListing = await pool.query(
+      `UPDATE rental_listings SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+      values
+    );
+
+    res.json({
+      message: 'Rental listing updated successfully',
+      listing: updatedListing.rows[0]
+    });
+  } catch (error) {
+    console.error('Update rental listing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/rental-listings/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user owns the rental listing
+    const ownershipCheck = await pool.query(`
+      SELECT rl.id FROM rental_listings rl
+      JOIN rental_units ru ON rl.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE rl.id = $1 AND p.lessor_id = $2
+    `, [id, req.user.userId]);
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await pool.query('DELETE FROM rental_listings WHERE id = $1', [id]);
+
+    res.json({ message: 'Rental listing deleted successfully' });
+  } catch (error) {
+    console.error('Delete rental listing error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Initialize database and start server

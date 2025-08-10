@@ -24,6 +24,7 @@ async function setupDatabase() {
         address TEXT,
         profile_image_url TEXT,
         is_verified BOOLEAN DEFAULT FALSE,
+        user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -42,6 +43,94 @@ async function setupDatabase() {
     `);
     console.log('✓ User sessions table created');
 
+    // Create premises table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS premises (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        address TEXT NOT NULL,
+        city VARCHAR(100) NOT NULL,
+        state VARCHAR(50) NOT NULL,
+        zip_code VARCHAR(20) NOT NULL,
+        country VARCHAR(100) DEFAULT 'USA',
+        property_type VARCHAR(50) NOT NULL CHECK (property_type IN ('apartment', 'house', 'condo', 'townhouse', 'duplex', 'studio')),
+        total_units INTEGER,
+        year_built INTEGER,
+        amenities TEXT[],
+        description TEXT,
+        lessor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Premises table created');
+
+    // Create rental_units table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rental_units (
+        id SERIAL PRIMARY KEY,
+        unit_number VARCHAR(50) NOT NULL,
+        premises_id INTEGER REFERENCES premises(id) ON DELETE CASCADE,
+        unit_type VARCHAR(50) NOT NULL CHECK (unit_type IN ('studio', '1BR', '2BR', '3BR', '4BR+')),
+        square_feet INTEGER,
+        bedrooms INTEGER,
+        bathrooms DECIMAL(3,1),
+        floor_number INTEGER,
+        rent_amount DECIMAL(10,2) NOT NULL,
+        security_deposit DECIMAL(10,2),
+        utilities_included BOOLEAN DEFAULT FALSE,
+        available_from DATE,
+        is_available BOOLEAN DEFAULT TRUE,
+        features TEXT[],
+        images TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(premises_id, unit_number)
+      )
+    `);
+    console.log('✓ Rental units table created');
+
+    // Create leases table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS leases (
+        id SERIAL PRIMARY KEY,
+        rental_unit_id INTEGER REFERENCES rental_units(id) ON DELETE CASCADE,
+        lessor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        lessee_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        monthly_rent DECIMAL(10,2) NOT NULL,
+        security_deposit DECIMAL(10,2),
+        lease_status VARCHAR(20) DEFAULT 'active' CHECK (lease_status IN ('draft', 'active', 'expired', 'terminated')),
+        terms_conditions TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CHECK (end_date > start_date)
+      )
+    `);
+    console.log('✓ Leases table created');
+
+    // Create rental_listings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rental_listings (
+        id SERIAL PRIMARY KEY,
+        rental_unit_id INTEGER REFERENCES rental_units(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        monthly_rent DECIMAL(10,2) NOT NULL,
+        available_from DATE,
+        listing_status VARCHAR(20) DEFAULT 'active' CHECK (listing_status IN ('draft', 'active', 'pending', 'rented', 'inactive')),
+        featured BOOLEAN DEFAULT FALSE,
+        views_count INTEGER DEFAULT 0,
+        contact_phone VARCHAR(20),
+        contact_email VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Rental listings table created');
+
     // Create indexes for better performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)
@@ -58,11 +147,46 @@ async function setupDatabase() {
     `);
     console.log('✓ Expires index created');
 
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_premises_lessor ON premises(lessor_id)
+    `);
+    console.log('✓ Premises lessor index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_rental_units_premises ON rental_units(premises_id)
+    `);
+    console.log('✓ Rental units premises index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_rental_units_available ON rental_units(is_available)
+    `);
+    console.log('✓ Rental units availability index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_leases_lessee ON leases(lessee_id)
+    `);
+    console.log('✓ Leases lessee index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_leases_lessor ON leases(lessor_id)
+    `);
+    console.log('✓ Leases lessor index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_rental_listings_status ON rental_listings(listing_status)
+    `);
+    console.log('✓ Rental listings status index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_rental_listings_featured ON rental_listings(featured)
+    `);
+    console.log('✓ Rental listings featured index created');
+
     client.release();
-    console.log(`\n🎉 ${SERVER_CONFIG.APP_NAME} Database setup completed successfully!`);
+    console.log('\n🎉 Rently Database setup completed successfully!');
     console.log('\nYou can now:');
-    console.log(`1. Start the ${SERVER_CONFIG.APP_NAME} server with: npm run server`);
-    console.log(`2. Run the ${SERVER_CONFIG.APP_NAME} mobile app with: npm start`);
+    console.log('1. Start the Rently server with: npm run server');
+    console.log('2. Run the Rently mobile app with: npm start');
     
   } catch (error) {
     console.error('❌ Database setup failed:', error);
