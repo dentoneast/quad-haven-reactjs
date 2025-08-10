@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Title, Surface, Button, useTheme } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatus } from '../components/NetworkStatus';
+import { getAppName } from '../config/app';
 
 const HomeScreen: React.FC = () => {
   const { user } = useAuth();
@@ -11,7 +12,7 @@ const HomeScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Surface style={styles.header}>
-        <Title style={styles.title}>Welcome to Rently</Title>
+        <Title style={styles.title}>Welcome to {getAppName()}</Title>
         <Text style={styles.subtitle}>
           Hello, {user?.first_name}! Ready to find your next rental?
         </Text>

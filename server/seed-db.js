@@ -1,13 +1,8 @@
 const { Pool } = require('pg');
+const SERVER_CONFIG = require('./config');
 require('dotenv').config();
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME || 'rently',
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
+const pool = new Pool(SERVER_CONFIG.DB_CONFIG);
 
 const fakeUsers = [
   {

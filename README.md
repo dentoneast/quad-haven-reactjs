@@ -220,21 +220,31 @@ The application comes with 10 pre-configured test users for development and test
 rently/
 ├── server/                 # Backend server
 │   ├── index.js           # Main server file
+│   ├── config.js          # Server configuration
 │   ├── setup-db.js        # Database setup script
 │   └── seed-db.js         # Database seeding script
 ├── src/                   # Frontend source code
+│   ├── components/        # Reusable UI components
+│   │   └── NetworkStatus.tsx
+│   ├── config/            # Configuration files
+│   │   ├── app.ts         # App configuration (name, API settings)
+│   │   └── api.ts         # API configuration (deprecated, use app.ts)
 │   ├── contexts/          # React contexts
 │   │   └── AuthContext.tsx
 │   ├── navigation/        # Navigation components
 │   │   └── AppNavigator.tsx
-│   └── screens/           # Screen components
+│   └── screens/           # App screens
+│       ├── HomeScreen.tsx
 │       ├── LoginScreen.tsx
 │       ├── RegisterScreen.tsx
-│       ├── ProfileScreen.tsx
-│       └── HomeScreen.tsx
-├── App.tsx                # Main app component
+│       └── ProfileScreen.tsx
+├── scripts/               # Utility scripts
+│   ├── get-ip.js          # Get local IP address
+│   └── update-app-name.js # Update app name in config files
+├── .env.example           # Environment variables template
+├── app.json               # Expo configuration
 ├── package.json           # Dependencies and scripts
-└── README.md             # This file
+└── README.md              # This file
 ```
 
 ## Development
@@ -246,6 +256,19 @@ rently/
 4. Update database schema if needed
 
 ## 🔧 Troubleshooting
+
+### App Name Configuration
+
+The app name is now configurable and automatically read from `app.json`. To change the app name:
+
+1. **Update app.json**: Change the `name` field in `app.json`
+2. **Run the update script**: 
+   ```bash
+   npm run update-app-name
+   ```
+3. **Restart your development server**
+
+This will automatically update all configuration files with the new app name.
 
 ### Network Connection Issues
 
@@ -273,7 +296,7 @@ If you encounter "Network request failed" errors:
      ```
      - **Windows**: `ipconfig` in Command Prompt
      - **macOS/Linux**: `ifconfig` or `ip addr` in Terminal
-   - Update `src/config/api.ts` with your computer's IP:
+   - Update `src/config/app.ts` with your computer's IP:
      ```typescript
      BASE_URL: 'http://YOUR_IP_ADDRESS:3000/api'
      ```

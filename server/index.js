@@ -4,26 +4,21 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const SERVER_CONFIG = require('./config');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = SERVER_CONFIG.PORT;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // PostgreSQL connection
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'rently',
-  password: process.env.DB_PASSWORD || 'password',
-  port: process.env.DB_PORT || 5432,
-});
+const pool = new Pool(SERVER_CONFIG.DB_CONFIG);
 
 // JWT secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = SERVER_CONFIG.JWT_SECRET;
 
 // Database initialization
 async function initializeDatabase() {
@@ -353,8 +348,8 @@ app.get('/api/health', (req, res) => {
 
 // Initialize database and start server
 initializeDatabase().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Rently Server running on port ${PORT}`);
+  app.listen(PORT, SERVER_CONFIG.HOST, () => {
+    console.log(`🚀 ${SERVER_CONFIG.APP_NAME} Server running on port ${PORT}`);
     console.log(`📱 API available at http://localhost:${PORT}/api`);
     console.log(`🌐 Network accessible at http://0.0.0.0:${PORT}/api`);
     console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
