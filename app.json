@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "rental_app",
-    "slug": "rental_app",
+    "name": "Rently",
+    "slug": "rently",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

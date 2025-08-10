@@ -1,4 +1,4 @@
-# Rental App
+# Rently
 
 A React Native mobile application with member registration, sign up, and profile settings features, backed by a PostgreSQL database and Express.js server.
 
@@ -49,7 +49,7 @@ A React Native mobile application with member registration, sign up, and profile
 ### 1. Clone the repository
 ```bash
 git clone <repository-url>
-cd rental_app
+cd rently
 ```
 
 ### 2. Install dependencies
@@ -106,7 +106,7 @@ NODE_ENV=development
    ```
 
 2. **Database Setup & Seeding**
-   - Create a PostgreSQL database named `rental_app`
+   - Create a PostgreSQL database named `rently`
    - Copy `.env.example` to `.env` and update your database credentials
    - Run the complete database setup with sample data:
    ```bash
@@ -217,7 +217,7 @@ The application comes with 10 pre-configured test users for development and test
 ## Project Structure
 
 ```
-rental_app/
+rently/
 ├── server/                 # Backend server
 │   ├── index.js           # Main server file
 │   ├── setup-db.js        # Database setup script
@@ -304,7 +304,7 @@ If you encounter "Network request failed" errors:
 ### Database Connection Issues
    - Verify PostgreSQL is running
    - Check `.env` file configuration
-   - Ensure database `rental_app` exists
+   - Ensure database `rently` exists
    - Run `npm run db:push` to recreate tables
 
 ### Code Style

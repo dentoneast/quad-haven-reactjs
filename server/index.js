@@ -17,7 +17,7 @@ app.use(express.json());
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'rental_app',
+  database: process.env.DB_NAME || 'rently',
   password: process.env.DB_PASSWORD || 'password',
   port: process.env.DB_PORT || 5432,
 });
@@ -354,7 +354,7 @@ app.get('/api/health', (req, res) => {
 // Initialize database and start server
 initializeDatabase().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Rently Server running on port ${PORT}`);
     console.log(`📱 API available at http://localhost:${PORT}/api`);
     console.log(`🌐 Network accessible at http://0.0.0.0:${PORT}/api`);
     console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);

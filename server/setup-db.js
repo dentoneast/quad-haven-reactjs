@@ -4,7 +4,7 @@ require('dotenv').config();
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'rental_app',
+  database: process.env.DB_NAME || 'rently',
   password: process.env.DB_PASSWORD || 'password',
   port: process.env.DB_PORT || 5432,
 });
@@ -64,10 +64,10 @@ async function setupDatabase() {
     console.log('✓ Expires index created');
 
     client.release();
-    console.log('\n🎉 Database setup completed successfully!');
+    console.log('\n🎉 Rently Database setup completed successfully!');
     console.log('\nYou can now:');
-    console.log('1. Start the server with: npm run server');
-    console.log('2. Run the React Native app with: npm start');
+    console.log('1. Start the Rently server with: npm run server');
+    console.log('2. Run the Rently mobile app with: npm start');
     
   } catch (error) {
     console.error('❌ Database setup failed:', error);

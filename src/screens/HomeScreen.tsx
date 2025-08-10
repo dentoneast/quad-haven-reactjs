@@ -11,7 +11,7 @@ const HomeScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Surface style={styles.header}>
-        <Title style={styles.title}>Welcome to Rental App</Title>
+        <Title style={styles.title}>Welcome to Rently</Title>
         <Text style={styles.subtitle}>
           Hello, {user?.first_name}! Ready to find your next rental?
         </Text>
