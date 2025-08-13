@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useAuth } from '../contexts/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -10,6 +11,7 @@ import HomeScreen from '../screens/HomeScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const AuthStack = () => (
   <Stack.Navigator
@@ -53,6 +55,31 @@ const MainTabNavigator = () => (
   </Tab.Navigator>
 );
 
+const MainDrawerNavigator = () => (
+  <Drawer.Navigator
+    screenOptions={{
+      headerShown: true,
+      headerStyle: {
+        backgroundColor: '#6200ee',
+      },
+      headerTintColor: '#fff',
+      headerTitleStyle: {
+        fontWeight: 'bold',
+      },
+      drawerActiveTintColor: '#6200ee',
+      drawerInactiveTintColor: '#666',
+    }}
+  >
+    <Drawer.Screen 
+      name="MainTabs" 
+      component={MainTabNavigator}
+      options={{
+        title: 'Dashboard',
+      }}
+    />
+  </Drawer.Navigator>
+);
+
 const AppNavigator: React.FC = () => {
   const { user, isLoading } = useAuth();
 
@@ -62,7 +89,7 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      {user ? <MainTabNavigator /> : <AuthStack />}
+      {user ? <MainDrawerNavigator /> : <AuthStack />}
     </NavigationContainer>
   );
 };
