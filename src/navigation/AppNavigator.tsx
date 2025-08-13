@@ -14,6 +14,7 @@ import LeaseManagementScreen from '../screens/LeaseManagementScreen';
 import MyLeasesScreen from '../screens/MyLeasesScreen';
 import RentPaymentsScreen from '../screens/RentPaymentsScreen';
 import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
+import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -107,6 +108,12 @@ const AppNavigator: React.FC = () => {
             name="LeaseManagement" 
             component={LeaseManagementScreen}
             options={{ title: 'Lease Management' }}
+          />
+          
+          <Stack.Screen 
+            name="OrganizationManagement" 
+            component={OrganizationManagementScreen}
+            options={{ title: 'Organization Management' }}
           />
           
           {/* Tenant Screens */}

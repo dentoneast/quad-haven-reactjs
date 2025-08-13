@@ -14,6 +14,8 @@ import {
   Title,
   Surface,
   useTheme,
+  SegmentedButtons,
+  Divider,
 } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -28,7 +30,22 @@ const RegisterScreen: React.FC = () => {
     phone: '',
     dateOfBirth: '',
     address: '',
+    userType: 'tenant',
   });
+
+  const [organizationData, setOrganizationData] = useState({
+    name: '',
+    slug: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    website: '',
+    description: '',
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,6 +56,10 @@ const RegisterScreen: React.FC = () => {
 
   const updateFormData = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateOrganizationData = (key: string, value: string) => {
+    setOrganizationData(prev => ({ ...prev, [key]: value }));
   };
 
   const validateForm = () => {
@@ -57,6 +78,19 @@ const RegisterScreen: React.FC = () => {
       return false;
     }
 
+    // Validate organization fields if user is a landlord
+    if (formData.userType === 'landlord') {
+      if (!organizationData.name.trim() || !organizationData.slug.trim()) {
+        Alert.alert('Error', 'Organization name and slug are required for landlords');
+        return false;
+      }
+      
+      if (organizationData.slug.includes(' ')) {
+        Alert.alert('Error', 'Organization slug cannot contain spaces');
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -73,6 +107,19 @@ const RegisterScreen: React.FC = () => {
         phone: formData.phone.trim() || undefined,
         dateOfBirth: formData.dateOfBirth || undefined,
         address: formData.address.trim() || undefined,
+        userType: formData.userType,
+        ...(formData.userType === 'landlord' && {
+          organizationName: organizationData.name.trim(),
+          organizationSlug: organizationData.slug.trim(),
+          organizationEmail: organizationData.email.trim() || formData.email.trim(),
+          organizationPhone: organizationData.phone.trim() || undefined,
+          organizationAddress: organizationData.address.trim() || undefined,
+          organizationCity: organizationData.city.trim() || undefined,
+          organizationState: organizationData.state.trim() || undefined,
+          organizationZipCode: organizationData.zipCode.trim() || undefined,
+          organizationWebsite: organizationData.website.trim() || undefined,
+          organizationDescription: organizationData.description.trim() || undefined,
+        }),
       };
 
       await register(userData);
@@ -88,6 +135,14 @@ const RegisterScreen: React.FC = () => {
     navigation.navigate('Login' as never);
   };
 
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -100,6 +155,16 @@ const RegisterScreen: React.FC = () => {
         <Surface style={styles.surface}>
           <Title style={styles.title}>Create Account</Title>
           <Text style={styles.subtitle}>Join our rental community</Text>
+
+          <SegmentedButtons
+            value={formData.userType}
+            onValueChange={(value) => updateFormData('userType', value)}
+            buttons={[
+              { value: 'tenant', label: 'Tenant' },
+              { value: 'landlord', label: 'Landlord' },
+            ]}
+            style={styles.userTypeSelector}
+          />
 
           <TextInput
             label="First Name *"
@@ -200,6 +265,127 @@ const RegisterScreen: React.FC = () => {
             }
           />
 
+          {/* Organization Section for Landlords */}
+          {formData.userType === 'landlord' && (
+            <>
+              <Divider style={styles.divider} />
+              <Title style={styles.sectionTitle}>Organization Details</Title>
+              <Text style={styles.sectionSubtitle}>
+                Set up your property management organization
+              </Text>
+
+              <TextInput
+                label="Organization Name *"
+                value={organizationData.name}
+                onChangeText={(value) => {
+                  updateOrganizationData('name', value);
+                  updateOrganizationData('slug', generateSlug(value));
+                }}
+                mode="outlined"
+                style={styles.input}
+                autoCapitalize="words"
+                left={<TextInput.Icon icon="office-building" />}
+              />
+
+              <TextInput
+                label="Organization Slug *"
+                value={organizationData.slug}
+                onChangeText={(value) => updateOrganizationData('slug', value)}
+                mode="outlined"
+                style={styles.input}
+                autoCapitalize="none"
+                left={<TextInput.Icon icon="link" />}
+                placeholder="my-organization"
+              />
+
+              <TextInput
+                label="Organization Email"
+                value={organizationData.email}
+                onChangeText={(value) => updateOrganizationData('email', value)}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                left={<TextInput.Icon icon="email" />}
+                placeholder="info@organization.com"
+              />
+
+              <TextInput
+                label="Organization Phone"
+                value={organizationData.phone}
+                onChangeText={(value) => updateOrganizationData('phone', value)}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="phone-pad"
+                left={<TextInput.Icon icon="phone" />}
+              />
+
+              <TextInput
+                label="Organization Address"
+                value={organizationData.address}
+                onChangeText={(value) => updateOrganizationData('address', value)}
+                mode="outlined"
+                style={styles.input}
+                multiline
+                numberOfLines={2}
+                left={<TextInput.Icon icon="map-marker" />}
+              />
+
+              <View style={styles.row}>
+                <TextInput
+                  label="City"
+                  value={organizationData.city}
+                  onChangeText={(value) => updateOrganizationData('city', value)}
+                  mode="outlined"
+                  style={[styles.input, styles.halfInput]}
+                  left={<TextInput.Icon icon="city" />}
+                />
+                <TextInput
+                  label="State"
+                  value={organizationData.state}
+                  onChangeText={(value) => updateOrganizationData('state', value)}
+                  mode="outlined"
+                  style={[styles.input, styles.halfInput]}
+                  left={<TextInput.Icon icon="map" />}
+                />
+              </View>
+
+              <TextInput
+                label="ZIP Code"
+                value={organizationData.zipCode}
+                onChangeText={(value) => updateOrganizationData('zipCode', value)}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="map-marker" />}
+              />
+
+              <TextInput
+                label="Website"
+                value={organizationData.website}
+                onChangeText={(value) => updateOrganizationData('website', value)}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="url"
+                autoCapitalize="none"
+                left={<TextInput.Icon icon="web" />}
+                placeholder="https://example.com"
+              />
+
+              <TextInput
+                label="Description"
+                value={organizationData.description}
+                onChangeText={(value) => updateOrganizationData('description', value)}
+                mode="outlined"
+                style={styles.input}
+                multiline
+                numberOfLines={3}
+                left={<TextInput.Icon icon="text" />}
+                placeholder="Tell us about your organization..."
+              />
+            </>
+          )}
+
           <Button
             mode="contained"
             onPress={handleRegister}
@@ -260,8 +446,31 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     opacity: 0.7,
   },
+  userTypeSelector: {
+    marginBottom: 24,
+  },
   input: {
     marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 24,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfInput: {
+    width: '48%',
   },
   button: {
     marginTop: 8,

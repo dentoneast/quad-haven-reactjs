@@ -93,6 +93,13 @@ const HomeScreen: React.FC = () => {
                 <MaterialCommunityIcons name="file-document" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Leases</Text>
               </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('OrganizationManagement')}
+              >
+                <MaterialCommunityIcons name="office-building" size={32} color="#6200ee" />
+                <Text style={styles.gridItemText}>Organization</Text>
+              </TouchableOpacity>
             </View>
           </Surface>
         )}

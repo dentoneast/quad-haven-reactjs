@@ -11,11 +11,38 @@ async function setupDatabase() {
     
     console.log('Creating database tables...');
     
-    // Create users table
+    // Create organizations table for multi-tenancy
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS organizations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        description TEXT,
+        logo_url TEXT,
+        website VARCHAR(255),
+        phone VARCHAR(20),
+        email VARCHAR(255),
+        address TEXT,
+        city VARCHAR(100),
+        state VARCHAR(50),
+        zip_code VARCHAR(20),
+        country VARCHAR(100) DEFAULT 'USA',
+        subscription_plan VARCHAR(50) DEFAULT 'basic',
+        subscription_status VARCHAR(20) DEFAULT 'active',
+        max_users INTEGER DEFAULT 10,
+        max_properties INTEGER DEFAULT 50,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Organizations table created');
+
+    // Create users table with organization support
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
@@ -25,8 +52,11 @@ async function setupDatabase() {
         profile_image_url TEXT,
         is_verified BOOLEAN DEFAULT FALSE,
         user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin')),
+        organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL,
+        is_organization_admin BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(organization_id, email)
       )
     `);
     console.log('✓ Users table created');
@@ -43,7 +73,7 @@ async function setupDatabase() {
     `);
     console.log('✓ User sessions table created');
 
-    // Create premises table
+    // Create premises table with organization support
     await client.query(`
       CREATE TABLE IF NOT EXISTS premises (
         id SERIAL PRIMARY KEY,
@@ -58,6 +88,7 @@ async function setupDatabase() {
         year_built INTEGER,
         amenities TEXT[],
         description TEXT,
+        organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
         lessor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -138,6 +169,16 @@ async function setupDatabase() {
     console.log('✓ Email index created');
 
     await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_organization ON users(organization_id)
+    `);
+    console.log('✓ Users organization index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug)
+    `);
+    console.log('✓ Organizations slug index created');
+
+    await client.query(`
       CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(token_hash)
     `);
     console.log('✓ Token index created');
@@ -146,6 +187,11 @@ async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at)
     `);
     console.log('✓ Expires index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_premises_organization ON premises(organization_id)
+    `);
+    console.log('✓ Premises organization index created');
 
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_premises_lessor ON premises(lessor_id)

@@ -4,6 +4,54 @@ require('dotenv').config();
 
 const pool = new Pool(SERVER_CONFIG.DB_CONFIG);
 
+const fakeOrganizations = [
+  {
+    name: 'Sunset Property Management',
+    slug: 'sunset-properties',
+    description: 'Professional property management company specializing in residential properties in Los Angeles',
+    website: 'https://sunsetproperties.com',
+    phone: '+1-555-0100',
+    email: 'info@sunsetproperties.com',
+    address: '1000 Sunset Blvd, Los Angeles, CA 90210',
+    city: 'Los Angeles',
+    state: 'CA',
+    zip_code: '90210',
+    subscription_plan: 'premium',
+    max_users: 25,
+    max_properties: 100
+  },
+  {
+    name: 'Downtown Real Estate Group',
+    slug: 'downtown-real-estate',
+    description: 'Luxury real estate management in downtown Chicago',
+    website: 'https://downtownrealestate.com',
+    phone: '+1-555-0200',
+    email: 'contact@downtownrealestate.com',
+    address: '500 Main Street, Chicago, IL 60601',
+    city: 'Chicago',
+    state: 'IL',
+    zip_code: '60601',
+    subscription_plan: 'basic',
+    max_users: 10,
+    max_properties: 50
+  },
+  {
+    name: 'Riverside Property Solutions',
+    slug: 'riverside-properties',
+    description: 'Comprehensive property management for Houston area',
+    website: 'https://riversideproperties.com',
+    phone: '+1-555-0300',
+    email: 'info@riversideproperties.com',
+    address: '200 River Road, Houston, TX 77001',
+    city: 'Houston',
+    state: 'TX',
+    zip_code: '77001',
+    subscription_plan: 'standard',
+    max_users: 15,
+    max_properties: 75
+  }
+];
+
 const fakeUsers = [
   {
     email: 'john.doe@example.com',
@@ -330,14 +378,57 @@ async function seedDatabase() {
       return;
     }
 
-    // Insert fake users
+    // Insert fake organizations
+    console.log('🏢 Creating organizations...');
+    const organizationIds = [];
+    for (const org of fakeOrganizations) {
+      const query = `
+        INSERT INTO organizations (name, slug, description, website, phone, email, address, city, state, zip_code, subscription_plan, max_users, max_properties, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+        RETURNING id, name
+      `;
+      
+      const values = [
+        org.name,
+        org.slug,
+        org.description,
+        org.website,
+        org.phone,
+        org.email,
+        org.address,
+        org.city,
+        org.state,
+        org.zip_code,
+        org.subscription_plan,
+        org.max_users,
+        org.max_properties
+      ];
+      
+      const result = await pool.query(query, values);
+      organizationIds.push(result.rows[0].id);
+      console.log(`✅ Created organization: ${result.rows[0].name}`);
+    }
+
+    // Insert fake users with organization assignments
     console.log('👥 Creating users...');
-    for (const user of fakeUsers) {
+    for (let i = 0; i < fakeUsers.length; i++) {
+      const user = fakeUsers[i];
       const hashedPassword = await require('bcryptjs').hash(user.password, 10);
       
+      // Assign landlords to organizations, tenants remain without organization
+      let organizationId = null;
+      let isOrgAdmin = false;
+      
+      if (user.user_type === 'landlord') {
+        // Assign landlords to organizations in round-robin fashion
+        const orgIndex = Math.floor(i / 2) % organizationIds.length;
+        organizationId = organizationIds[orgIndex];
+        isOrgAdmin = true; // First landlord in each org is admin
+      }
+      
       const query = `
-        INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address, user_type, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address, user_type, organization_id, is_organization_admin, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING id, email, first_name, last_name, user_type
       `;
       
@@ -349,19 +440,27 @@ async function seedDatabase() {
         user.phone,
         user.date_of_birth,
         user.address,
-        user.user_type
+        user.user_type,
+        organizationId,
+        isOrgAdmin
       ];
       
       const result = await pool.query(query, values);
-      console.log(`✅ Created user: ${result.rows[0].first_name} ${result.rows[0].last_name} (${result.rows[0].user_type})`);
+      console.log(`✅ Created user: ${result.rows[0].first_name} ${result.rows[0].last_name} (${result.rows[0].user_type})${organizationId ? ` in organization ${organizationId}` : ''}`);
     }
 
-    // Insert fake premises
+    // Insert fake premises with organization assignments
     console.log('\n🏢 Creating premises...');
-    for (const premise of fakePremises) {
+    for (let i = 0; i < fakePremises.length; i++) {
+      const premise = fakePremises[i];
+      
+      // Get the organization ID for this premise's lessor
+      const lessorQuery = await pool.query('SELECT organization_id FROM users WHERE id = $1', [premise.lessor_id]);
+      const organizationId = lessorQuery.rows[0]?.organization_id;
+      
       const query = `
-        INSERT INTO premises (name, address, city, state, zip_code, property_type, total_units, year_built, amenities, description, lessor_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+        INSERT INTO premises (name, address, city, state, zip_code, property_type, total_units, year_built, amenities, description, organization_id, lessor_id, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
         RETURNING id, name
       `;
       
@@ -376,11 +475,12 @@ async function seedDatabase() {
         premise.year_built,
         premise.amenities,
         premise.description,
+        organizationId,
         premise.lessor_id
       ];
       
       const result = await pool.query(query, values);
-      console.log(`✅ Created premise: ${result.rows[0].name}`);
+      console.log(`✅ Created premise: ${result.rows[0].name}${organizationId ? ` in organization ${organizationId}` : ''}`);
     }
 
     // Insert fake rental units
@@ -464,6 +564,7 @@ async function seedDatabase() {
     }
     
     console.log(`\n🎉 Successfully seeded database with:`);
+    console.log(`   - ${fakeOrganizations.length} organizations`);
     console.log(`   - ${fakeUsers.length} users (tenants, landlords, admins)`);
     console.log(`   - ${fakePremises.length} premises`);
     console.log(`   - ${fakeRentalUnits.length} rental units`);

@@ -186,7 +186,17 @@ app.post('/api/auth/register', [
   body('phone').optional().isMobilePhone(),
   body('dateOfBirth').optional().isISO8601(),
   body('address').optional().trim(),
-  body('userType').optional().isIn(['tenant', 'landlord', 'admin'])
+  body('userType').optional().isIn(['tenant', 'landlord', 'admin']),
+  body('organizationName').optional().trim(),
+  body('organizationSlug').optional().trim(),
+  body('organizationEmail').optional().isEmail(),
+  body('organizationPhone').optional(),
+  body('organizationAddress').optional().trim(),
+  body('organizationCity').optional().trim(),
+  body('organizationState').optional().trim(),
+  body('organizationZipCode').optional().trim(),
+  body('organizationWebsite').optional().isURL(),
+  body('organizationDescription').optional().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -194,7 +204,12 @@ app.post('/api/auth/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, firstName, lastName, phone, dateOfBirth, address, userType } = req.body;
+    const { 
+      email, password, firstName, lastName, phone, dateOfBirth, address, userType,
+      organizationName, organizationSlug, organizationEmail, organizationPhone,
+      organizationAddress, organizationCity, organizationState, organizationZipCode,
+      organizationWebsite, organizationDescription
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -202,16 +217,48 @@ app.post('/api/auth/register', [
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
+    // If landlord is creating an organization, validate organization data
+    if (userType === 'landlord' && organizationName && organizationSlug) {
+      // Check if organization slug already exists
+      const existingOrg = await pool.query(
+        'SELECT id FROM organizations WHERE slug = $1',
+        [organizationSlug]
+      );
+
+      if (existingOrg.rows.length > 0) {
+        return res.status(400).json({ error: 'Organization slug already exists' });
+      }
+    }
+
     // Hash password
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    let organizationId = null;
+    let isOrgAdmin = false;
+
+    // Create organization if landlord is registering with organization
+    if (userType === 'landlord' && organizationName && organizationSlug) {
+      const newOrg = await pool.query(`
+        INSERT INTO organizations (name, slug, email, phone, address, city, state, zip_code, website, description, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        RETURNING id
+      `, [
+        organizationName, organizationSlug, organizationEmail || email, organizationPhone,
+        organizationAddress, organizationCity, organizationState, organizationZipCode,
+        organizationWebsite, organizationDescription
+      ]);
+      
+      organizationId = newOrg.rows[0].id;
+      isOrgAdmin = true; // First landlord in organization is admin
+    }
+
     // Insert new user
     const newUser = await pool.query(`
-      INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address, user_type)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, email, first_name, last_name, phone, date_of_birth, address, user_type, created_at
-    `, [email, passwordHash, firstName, lastName, phone, dateOfBirth, address, userType || 'tenant']);
+      INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, address, user_type, organization_id, is_organization_admin)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, email, first_name, last_name, phone, date_of_birth, address, user_type, organization_id, is_organization_admin, created_at
+    `, [email, passwordHash, firstName, lastName, phone, dateOfBirth, address, userType || 'tenant', organizationId, isOrgAdmin]);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -223,6 +270,7 @@ app.post('/api/auth/register', [
     res.status(201).json({
       message: 'User registered successfully',
       user: newUser.rows[0],
+      organization: organizationId ? { id: organizationId, name: organizationName, slug: organizationSlug } : null,
       token
     });
   } catch (error) {
@@ -271,9 +319,23 @@ app.post('/api/auth/login', [
     );
 
     const { password_hash, ...userWithoutPassword } = user.rows[0];
+    
+    // Get organization information if user belongs to one
+    let organization = null;
+    if (userWithoutPassword.organization_id) {
+      const orgResult = await pool.query(
+        'SELECT id, name, slug, subscription_plan FROM organizations WHERE id = $1',
+        [userWithoutPassword.organization_id]
+      );
+      if (orgResult.rows.length > 0) {
+        organization = orgResult.rows[0];
+      }
+    }
+    
     res.json({
       message: 'Login successful',
       user: userWithoutPassword,
+      organization,
       token
     });
   } catch (error) {
@@ -427,6 +489,151 @@ app.put('/api/user/change-password', authenticateToken, [
   }
 });
 
+// Organization endpoints
+app.post('/api/organizations', [
+  body('name').notEmpty().withMessage('Organization name is required'),
+  body('slug').notEmpty().withMessage('Organization slug is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('phone').optional(),
+  body('address').optional(),
+  body('city').optional(),
+  body('state').optional(),
+  body('zip_code').optional(),
+  body('website').optional().isURL().withMessage('Valid website URL is required'),
+  body('description').optional()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      name, slug, email, phone, address, city, state, zip_code, website, description
+    } = req.body;
+
+    // Check if organization slug already exists
+    const existingOrg = await pool.query(
+      'SELECT id FROM organizations WHERE slug = $1',
+      [slug]
+    );
+
+    if (existingOrg.rows.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Organization slug already exists'
+      });
+    }
+
+    // Create organization
+    const result = await pool.query(`
+      INSERT INTO organizations (name, slug, email, phone, address, city, state, zip_code, website, description, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      RETURNING *
+    `, [name, slug, email, phone, address, city, state, zip_code, website, description]);
+
+    res.status(201).json({
+      status: 201,
+      message: 'Organization created successfully',
+      organization: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating organization:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/organizations/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const result = await pool.query(`
+      SELECT * FROM organizations WHERE slug = $1 AND is_active = true
+    `, [slug]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Organization not found'
+      });
+    }
+
+    res.json({
+      status: 200,
+      organization: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error fetching organization:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.put('/api/organizations/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Check if user is organization admin
+    const userCheck = await pool.query(`
+      SELECT organization_id, is_organization_admin FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || !userCheck.rows[0].is_organization_admin) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied. Only organization admins can update organization details.'
+      });
+    }
+
+    const {
+      name, description, phone, address, city, state, zip_code, website
+    } = req.body;
+
+    const result = await pool.query(`
+      UPDATE organizations 
+      SET name = COALESCE($1, name),
+          description = COALESCE($2, description),
+          phone = COALESCE($3, phone),
+          address = COALESCE($4, address),
+          city = COALESCE($5, city),
+          state = COALESCE($6, state),
+          zip_code = COALESCE($7, zip_code),
+          website = COALESCE($8, website),
+          updated_at = NOW()
+      WHERE id = $9 AND is_active = true
+      RETURNING *
+    `, [name, description, phone, address, city, state, zip_code, website, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 400,
+        message: 'Organization not found'
+      });
+    }
+    res.json({
+      status: 200,
+      message: 'Organization updated successfully',
+      organization: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating organization:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -454,11 +661,18 @@ app.post('/api/premises', authenticateToken, [
 
     const { name, address, city, state, zipCode, country, propertyType, totalUnits, yearBuilt, amenities, description } = req.body;
 
+    // Get user's organization ID
+    const userOrg = await pool.query(`
+      SELECT organization_id FROM users WHERE id = $1
+    `, [req.user.userId]);
+
+    const organizationId = userOrg.rows[0]?.organization_id;
+
     const newPremises = await pool.query(`
-      INSERT INTO premises (name, address, city, state, zip_code, country, property_type, total_units, year_built, amenities, description, lessor_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO premises (name, address, city, state, zip_code, country, property_type, total_units, year_built, amenities, description, organization_id, lessor_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
-    `, [name, address, city, state, zipCode, country || 'USA', propertyType, totalUnits, yearBuilt, amenities || [], description, req.user.userId]);
+    `, [name, address, city, state, zipCode, country || 'USA', propertyType, totalUnits, yearBuilt, amenities || [], description, organizationId, req.user.userId]);
 
     res.status(201).json({
       message: 'Premises created successfully',
@@ -525,6 +739,58 @@ app.get('/api/premises', async (req, res) => {
     });
   } catch (error) {
     console.error('Get premises error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get premises for a specific organization (landlord view)
+app.get('/api/organizations/:orgId/premises', authenticateToken, async (req, res) => {
+  try {
+    const { orgId } = req.params;
+    const userId = req.user.userId;
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Check if user belongs to this organization
+    const userCheck = await pool.query(`
+      SELECT organization_id, user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].organization_id !== parseInt(orgId)) {
+      return res.status(403).json({ error: 'Access denied. You can only view premises in your organization.' });
+    }
+
+    const premises = await pool.query(`
+      SELECT p.*, u.first_name as lessor_name, u.email as lessor_email,
+             COUNT(ru.id) as total_units,
+             COUNT(CASE WHEN ru.is_available = TRUE THEN 1 END) as available_units,
+             MIN(ru.rent_amount) as min_rent,
+             MAX(ru.rent_amount) as max_rent
+      FROM premises p
+      LEFT JOIN users u ON p.lessor_id = u.id
+      LEFT JOIN rental_units ru ON p.id = ru.premises_id
+      WHERE p.organization_id = $1 AND p.is_active = TRUE
+      GROUP BY p.id, u.first_name, u.email
+      ORDER BY p.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [orgId, limit, offset]);
+
+    const totalCount = await pool.query(`
+      SELECT COUNT(DISTINCT p.id) FROM premises p 
+      WHERE p.organization_id = $1 AND p.is_active = TRUE
+    `, [orgId]);
+
+    res.json({
+      premises: premises.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get organization premises error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
