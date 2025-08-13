@@ -5,10 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatus } from '../components/NetworkStatus';
 import { getAppName } from '../config/app';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const HomeScreen: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
+  const navigation = useNavigation();
   const [menuVisible, setMenuVisible] = useState(false);
 
   const showMenu = () => setMenuVisible(true);
@@ -63,19 +65,31 @@ const HomeScreen: React.FC = () => {
           <Surface style={styles.section}>
             <Title style={styles.sectionTitle}>Rental Management</Title>
             <View style={styles.gridContainer}>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('PremisesManagement')}
+              >
                 <MaterialCommunityIcons name="office-building" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Premises</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('RentalUnits')}
+              >
                 <MaterialCommunityIcons name="home-city" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Rental Units</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('RentalListings')}
+              >
                 <MaterialCommunityIcons name="format-list-bulleted" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Listings</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('LeaseManagement')}
+              >
                 <MaterialCommunityIcons name="file-document" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Leases</Text>
               </TouchableOpacity>
@@ -88,15 +102,24 @@ const HomeScreen: React.FC = () => {
           <Surface style={styles.section}>
             <Title style={styles.sectionTitle}>My Rentals</Title>
             <View style={styles.gridContainer}>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('MyLeases')}
+              >
                 <MaterialCommunityIcons name="file-document" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>My Leases</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('RentPayments')}
+              >
                 <MaterialCommunityIcons name="calendar" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Rent Payments</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('MaintenanceRequests')}
+              >
                 <MaterialCommunityIcons name="wrench" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Maintenance</Text>
               </TouchableOpacity>

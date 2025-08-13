@@ -7,6 +7,13 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import HomeScreen from '../screens/HomeScreen';
+import PremisesManagementScreen from '../screens/PremisesManagementScreen';
+import RentalUnitsScreen from '../screens/RentalUnitsScreen';
+import RentalListingsScreen from '../screens/RentalListingsScreen';
+import LeaseManagementScreen from '../screens/LeaseManagementScreen';
+import MyLeasesScreen from '../screens/MyLeasesScreen';
+import RentPaymentsScreen from '../screens/RentPaymentsScreen';
+import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -62,7 +69,66 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      {user ? <MainTabNavigator /> : <AuthStack />}
+      {user ? (
+        <Stack.Navigator
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#6200ee',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+          }}
+        >
+          <Stack.Screen 
+            name="MainTabs" 
+            component={MainTabNavigator}
+            options={{ headerShown: false }}
+          />
+          
+          {/* Landlord Screens */}
+          <Stack.Screen 
+            name="PremisesManagement" 
+            component={PremisesManagementScreen}
+            options={{ title: 'Premises Management' }}
+          />
+          <Stack.Screen 
+            name="RentalUnits" 
+            component={RentalUnitsScreen}
+            options={{ title: 'Rental Units' }}
+          />
+          <Stack.Screen 
+            name="RentalListings" 
+            component={RentalListingsScreen}
+            options={{ title: 'Rental Listings' }}
+          />
+          <Stack.Screen 
+            name="LeaseManagement" 
+            component={LeaseManagementScreen}
+            options={{ title: 'Lease Management' }}
+          />
+          
+          {/* Tenant Screens */}
+          <Stack.Screen 
+            name="MyLeases" 
+            component={MyLeasesScreen}
+            options={{ title: 'My Leases' }}
+          />
+          <Stack.Screen 
+            name="RentPayments" 
+            component={RentPaymentsScreen}
+            options={{ title: 'Rent Payments' }}
+          />
+          <Stack.Screen 
+            name="MaintenanceRequests" 
+            component={MaintenanceRequestsScreen}
+            options={{ title: 'Maintenance Requests' }}
+          />
+        </Stack.Navigator>
+      ) : (
+        <AuthStack />
+      )}
     </NavigationContainer>
   );
 };

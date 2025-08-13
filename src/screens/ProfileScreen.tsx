@@ -158,6 +158,10 @@ const ProfileScreen: React.FC = () => {
         />
         <Title style={styles.name}>{`${user.first_name} ${user.last_name}`}</Title>
         <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.userType}>
+          {user.user_type === 'landlord' ? '🏠 Landlord' : 
+           user.user_type === 'admin' ? '👑 Admin' : '👤 Tenant'}
+        </Text>
         {user.is_verified && (
           <Text style={styles.verified}>✓ Verified Account</Text>
         )}
@@ -351,6 +355,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     opacity: 0.7,
     marginBottom: 8,
+  },
+  userType: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6200ee',
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#f3e5f5',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   verified: {
     fontSize: 14,
