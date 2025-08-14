@@ -51,7 +51,7 @@ async function setupDatabase() {
         address TEXT,
         profile_image_url TEXT,
         is_verified BOOLEAN DEFAULT FALSE,
-        user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin')),
+                      user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin', 'workman')),
         organization_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL,
         is_organization_admin BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -292,10 +292,146 @@ async function setupDatabase() {
     `);
     console.log('✓ Messages sender index created');
 
-    await client.query(`
+        await client.query(`
       CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)
     `);
     console.log('✓ Messages created index created');
+
+    // Create maintenance_requests table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_requests (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        request_type VARCHAR(50) NOT NULL CHECK (request_type IN ('urgent', 'routine', 'emergency', 'preventive')),
+        priority VARCHAR(20) NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'critical')),
+        status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'assigned', 'in_progress', 'completed', 'rejected', 'cancelled')),
+        premises_id INTEGER REFERENCES premises(id) ON DELETE CASCADE,
+        rental_unit_id INTEGER REFERENCES rental_units(id) ON DELETE SET NULL,
+        tenant_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        landlord_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        assigned_workman_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        estimated_cost DECIMAL(10,2),
+        actual_cost DECIMAL(10,2),
+        requested_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        approved_date TIMESTAMP,
+        assigned_date TIMESTAMP,
+        started_date TIMESTAMP,
+        completed_date TIMESTAMP,
+        tenant_rating INTEGER CHECK (tenant_rating >= 1 AND tenant_rating <= 5),
+        tenant_feedback TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Maintenance requests table created');
+
+    // Create maintenance_work_orders table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_work_orders (
+        id SERIAL PRIMARY KEY,
+        maintenance_request_id INTEGER REFERENCES maintenance_requests(id) ON DELETE CASCADE,
+        workman_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        work_order_number VARCHAR(50) UNIQUE NOT NULL,
+        work_description TEXT NOT NULL,
+        estimated_hours DECIMAL(5,2),
+        materials_required TEXT[],
+        special_instructions TEXT,
+        status VARCHAR(30) NOT NULL DEFAULT 'assigned' CHECK (status IN ('assigned', 'in_progress', 'on_hold', 'completed', 'cancelled')),
+        assigned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_date TIMESTAMP,
+        completed_date TIMESTAMP,
+        actual_hours DECIMAL(5,2),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Maintenance work orders table created');
+
+    // Create maintenance_approvals table for workflow tracking
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_approvals (
+        id SERIAL PRIMARY KEY,
+        maintenance_request_id INTEGER REFERENCES maintenance_requests(id) ON DELETE CASCADE,
+        approver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        approval_type VARCHAR(30) NOT NULL CHECK (approval_type IN ('landlord', 'property_manager', 'workman', 'tenant')),
+        status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+        comments TEXT,
+        approved_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Maintenance approvals table created');
+
+    // Create maintenance_photos table for before/after photos
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_photos (
+        id SERIAL PRIMARY KEY,
+        maintenance_request_id INTEGER REFERENCES maintenance_requests(id) ON DELETE CASCADE,
+        photo_type VARCHAR(20) NOT NULL CHECK (photo_type IN ('before', 'after', 'during', 'other')),
+        photo_url TEXT NOT NULL,
+        caption TEXT,
+        uploaded_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Maintenance photos table created');
+
+    // Create maintenance_notifications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS maintenance_notifications (
+        id SERIAL PRIMARY KEY,
+        maintenance_request_id INTEGER REFERENCES maintenance_requests(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        notification_type VARCHAR(50) NOT NULL CHECK (notification_type IN ('request_created', 'request_approved', 'request_assigned', 'work_started', 'work_completed', 'request_rejected')),
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Maintenance notifications table created');
+
+    // Create indexes for maintenance tables
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_tenant ON maintenance_requests(tenant_id)
+    `);
+    console.log('✓ Maintenance requests tenant index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_landlord ON maintenance_requests(landlord_id)
+    `);
+    console.log('✓ Maintenance requests landlord index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_status ON maintenance_requests(status)
+    `);
+    console.log('✓ Maintenance requests status index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_premises ON maintenance_requests(premises_id)
+    `);
+    console.log('✓ Maintenance requests premises index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_work_orders_request ON maintenance_work_orders(maintenance_request_id)
+    `);
+    console.log('✓ Maintenance work orders request index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_work_orders_workman ON maintenance_work_orders(workman_id)
+    `);
+    console.log('✓ Maintenance work orders workman index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_approvals_request ON maintenance_approvals(maintenance_request_id)
+    `);
+    console.log('✓ Maintenance approvals request index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_notifications_user ON maintenance_notifications(user_id)
+    `);
+    console.log('✓ Maintenance notifications user index created');
 
     client.release();
     console.log('\n🎉 Rently Database setup completed successfully!');

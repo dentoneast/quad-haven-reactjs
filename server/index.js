@@ -942,6 +942,659 @@ app.post('/api/conversations/:id/messages', authenticateToken, [
   }
 });
 
+// Maintenance Request endpoints
+app.post('/api/maintenance-requests', authenticateToken, [
+  body('title').notEmpty().trim(),
+  body('description').notEmpty().trim(),
+  body('request_type').isIn(['urgent', 'routine', 'emergency', 'preventive']),
+  body('priority').isIn(['low', 'medium', 'high', 'critical']),
+  body('premises_id').isInt({ min: 1 }),
+  body('rental_unit_id').optional().isInt({ min: 1 }),
+  body('estimated_cost').optional().isFloat({ min: 0 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      title, description, request_type, priority, premises_id, rental_unit_id, estimated_cost
+    } = req.body;
+    const userId = req.user.userId;
+
+    // Verify user is a tenant and has access to the premises
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'tenant') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only tenants can create maintenance requests'
+      });
+    }
+
+    // Get landlord for the premises
+    const premisesCheck = await pool.query(`
+      SELECT lessor_id FROM premises WHERE id = $1
+    `, [premises_id]);
+
+    if (premisesCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Premises not found'
+      });
+    }
+
+    const landlordId = premisesCheck.rows[0].lessor_id;
+
+    // Create maintenance request
+    const result = await pool.query(`
+      INSERT INTO maintenance_requests (
+        title, description, request_type, priority, status, premises_id, rental_unit_id,
+        tenant_id, landlord_id, estimated_cost, requested_date, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, NOW(), NOW(), NOW())
+      RETURNING *
+    `, [title, description, request_type, priority, premises_id, rental_unit_id, userId, landlordId, estimated_cost]);
+
+    res.status(201).json({
+      status: 201,
+      message: 'Maintenance request created successfully',
+      maintenance_request: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating maintenance request:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/maintenance-requests', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { status, request_type, priority, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Get user type to determine what requests they can see
+    const userCheck = await pool.query(`
+      SELECT user_type, organization_id FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'User not found'
+      });
+    }
+
+    const userType = userCheck.rows[0].user_type;
+    const organizationId = userCheck.rows[0].organization_id;
+
+    let whereClause = '';
+    const values = [];
+    let paramCount = 1;
+
+    if (userType === 'tenant') {
+      whereClause = 'WHERE mr.tenant_id = $1';
+      values.push(userId);
+      paramCount++;
+    } else if (userType === 'landlord') {
+      whereClause = 'WHERE mr.landlord_id = $1';
+      values.push(userId);
+      paramCount++;
+    } else if (userType === 'workman') {
+      whereClause = 'WHERE mwo.workman_id = $1';
+      values.push(userId);
+      paramCount++;
+    }
+
+    if (status) {
+      whereClause += whereClause ? ' AND' : 'WHERE';
+      whereClause += ` mr.status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    if (request_type) {
+      whereClause += whereClause ? ' AND' : 'WHERE';
+      whereClause += ` mr.request_type = $${paramCount}`;
+      values.push(request_type);
+      paramCount++;
+    }
+
+    if (priority) {
+      whereClause += whereClause ? ' AND' : 'WHERE';
+      whereClause += ` mr.priority = $${paramCount}`;
+      values.push(priority);
+      paramCount++;
+    }
+
+    const query = `
+      SELECT 
+        mr.*,
+        p.name as premises_name,
+        p.address as premises_address,
+        ru.unit_number,
+        t.first_name as tenant_first_name,
+        t.last_name as tenant_last_name,
+        l.first_name as landlord_first_name,
+        l.last_name as landlord_last_name,
+        mwo.work_order_number,
+        mwo.status as work_order_status,
+        mwo.workman_id,
+        w.first_name as workman_first_name,
+        w.last_name as workman_last_name
+      FROM maintenance_requests mr
+      INNER JOIN premises p ON mr.premises_id = p.id
+      LEFT JOIN rental_units ru ON mr.rental_unit_id = ru.id
+      INNER JOIN users t ON mr.tenant_id = t.id
+      INNER JOIN users l ON mr.landlord_id = l.id
+      LEFT JOIN maintenance_work_orders mwo ON mr.id = mwo.maintenance_request_id
+      LEFT JOIN users w ON mwo.workman_id = w.id
+      ${whereClause}
+      ORDER BY 
+        CASE 
+          WHEN mr.priority = 'critical' THEN 1
+          WHEN mr.priority = 'high' THEN 2
+          WHEN mr.priority = 'medium' THEN 3
+          WHEN mr.priority = 'low' THEN 4
+        END,
+        mr.requested_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `;
+
+    const maintenanceRequests = await pool.query(query, [...values, limit, offset]);
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) FROM maintenance_requests mr
+      LEFT JOIN maintenance_work_orders mwo ON mr.id = mwo.maintenance_request_id
+      ${whereClause}
+    `;
+    const totalCount = await pool.query(countQuery, values);
+
+    res.json({
+      status: 200,
+      maintenance_requests: maintenanceRequests.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching maintenance requests:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/maintenance-requests/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Get maintenance request with all related data
+    const result = await pool.query(`
+      SELECT 
+        mr.*,
+        p.name as premises_name,
+        p.address as premises_address,
+        ru.unit_number,
+        t.first_name as tenant_first_name,
+        t.last_name as tenant_last_name,
+        t.email as tenant_email,
+        t.phone as tenant_phone,
+        l.first_name as landlord_first_name,
+        l.last_name as landlord_last_name,
+        l.email as landlord_email,
+        l.phone as landlord_phone
+      FROM maintenance_requests mr
+      INNER JOIN premises p ON mr.premises_id = p.id
+      LEFT JOIN rental_units ru ON mr.rental_unit_id = ru.id
+      INNER JOIN users t ON mr.tenant_id = t.id
+      INNER JOIN users l ON mr.landlord_id = l.id
+      WHERE mr.id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Maintenance request not found'
+      });
+    }
+
+    const maintenanceRequest = result.rows[0];
+
+    // Check if user has access to this request
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'User not found'
+      });
+    }
+
+    const userType = userCheck.rows[0].user_type;
+    const hasAccess = 
+      userType === 'admin' ||
+      maintenanceRequest.tenant_id === userId ||
+      maintenanceRequest.landlord_id === userId ||
+      (userType === 'workman' && await pool.query(`
+        SELECT id FROM maintenance_work_orders 
+        WHERE maintenance_request_id = $1 AND workman_id = $2
+      `, [id, userId]).then(r => r.rows.length > 0));
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied to this maintenance request'
+      });
+    }
+
+    // Get work orders
+    const workOrders = await pool.query(`
+      SELECT 
+        mwo.*,
+        w.first_name as workman_first_name,
+        w.last_name as workman_last_name,
+        w.email as workman_email,
+        w.phone as workman_phone
+      FROM maintenance_work_orders mwo
+      INNER JOIN users w ON mwo.workman_id = w.id
+      WHERE mwo.maintenance_request_id = $1
+      ORDER BY mwo.created_at DESC
+    `, [id]);
+
+    // Get approvals
+    const approvals = await pool.query(`
+      SELECT 
+        ma.*,
+        u.first_name as approver_first_name,
+        u.last_name as approver_last_name
+      FROM maintenance_approvals ma
+      INNER JOIN users u ON ma.approver_id = u.id
+      WHERE ma.maintenance_request_id = $1
+      ORDER BY ma.created_at DESC
+    `, [id]);
+
+    res.json({
+      status: 200,
+      maintenance_request: maintenanceRequest,
+      work_orders: workOrders.rows,
+      approvals: approvals.rows
+    });
+  } catch (error) {
+    console.error('Error fetching maintenance request:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.put('/api/maintenance-requests/:id/approve', authenticateToken, [
+  body('status').isIn(['approved', 'rejected']),
+  body('comments').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { status, comments } = req.body;
+    const userId = req.user.userId;
+
+    // Check if user is landlord or admin
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || !['landlord', 'admin'].includes(userCheck.rows[0].user_type)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only landlords and admins can approve maintenance requests'
+      });
+    }
+
+    // Get maintenance request
+    const requestCheck = await pool.query(`
+      SELECT landlord_id, status FROM maintenance_requests WHERE id = $1
+    `, [id]);
+
+    if (requestCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Maintenance request not found'
+      });
+    }
+
+    const request = requestCheck.rows[0];
+
+    // Check if user is the landlord for this request
+    if (userCheck.rows[0].user_type === 'landlord' && request.landlord_id !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: 'You can only approve maintenance requests for your properties'
+      });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        status: 400,
+        message: 'Can only approve pending maintenance requests'
+      });
+    }
+
+    // Update maintenance request status
+    const newStatus = status === 'approved' ? 'approved' : 'rejected';
+    await pool.query(`
+      UPDATE maintenance_requests 
+      SET status = $1, approved_date = $2, updated_at = NOW()
+      WHERE id = $3
+    `, [newStatus, status === 'approved' ? new Date() : null, id]);
+
+    // Create approval record
+    await pool.query(`
+      INSERT INTO maintenance_approvals (
+        maintenance_request_id, approver_id, approval_type, status, comments, approved_at, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    `, [id, userId, userCheck.rows[0].user_type, status, comments, status === 'approved' ? new Date() : null]);
+
+    res.json({
+      status: 200,
+      message: `Maintenance request ${status} successfully`,
+      new_status: newStatus
+    });
+  } catch (error) {
+    console.error('Error approving maintenance request:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.post('/api/maintenance-requests/:id/assign', authenticateToken, [
+  body('workman_id').isInt({ min: 1 }),
+  body('work_description').notEmpty().trim(),
+  body('estimated_hours').isFloat({ min: 0.1 }),
+  body('materials_required').optional().isArray(),
+  body('special_instructions').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { workman_id, work_description, estimated_hours, materials_required, special_instructions } = req.body;
+    const userId = req.user.userId;
+
+    // Check if user is landlord or admin
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || !['landlord', 'admin'].includes(userCheck.rows[0].user_type)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only landlords and admins can assign work orders'
+      });
+    }
+
+    // Get maintenance request
+    const requestCheck = await pool.query(`
+      SELECT landlord_id, status FROM maintenance_requests WHERE id = $1
+    `, [id]);
+
+    if (requestCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Maintenance request not found'
+      });
+    }
+
+    const request = requestCheck.rows[0];
+
+    if (request.status !== 'approved') {
+      return res.status(400).json({
+        status: 400,
+        message: 'Can only assign approved maintenance requests'
+      });
+    }
+
+    // Check if workman exists and is a workman
+    const workmanCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [workman_id]);
+
+    if (workmanCheck.rows.length === 0 || workmanCheck.rows[0].user_type !== 'workman') {
+      return res.status(400).json({
+        status: 400,
+        message: 'Invalid workman selected'
+      });
+    }
+
+    // Generate work order number
+    const workOrderNumber = `WO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+    // Create work order
+    const workOrder = await pool.query(`
+      INSERT INTO maintenance_work_orders (
+        maintenance_request_id, workman_id, work_order_number, work_description,
+        estimated_hours, materials_required, special_instructions, status,
+        assigned_date, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'assigned', NOW(), NOW(), NOW())
+      RETURNING *
+    `, [id, workman_id, workOrderNumber, work_description, estimated_hours, materials_required || [], special_instructions]);
+
+    // Update maintenance request status
+    await pool.query(`
+      UPDATE maintenance_requests 
+      SET status = 'assigned', assigned_date = NOW(), updated_at = NOW()
+      WHERE id = $1
+    `, [id]);
+
+    res.status(201).json({
+      status: 201,
+      message: 'Work order assigned successfully',
+      work_order: workOrder.rows[0]
+    });
+  } catch (error) {
+    console.error('Error assigning work order:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.put('/api/work-orders/:id/status', authenticateToken, [
+  body('status').isIn(['in_progress', 'on_hold', 'completed', 'cancelled']),
+  body('notes').optional().trim(),
+  body('actual_hours').optional().isFloat({ min: 0 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { status, notes, actual_hours } = req.body;
+    const userId = req.user.userId;
+
+    // Get work order
+    const workOrderCheck = await pool.query(`
+      SELECT mwo.*, mr.status as request_status, mr.id as request_id
+      FROM maintenance_work_orders mwo
+      INNER JOIN maintenance_requests mr ON mwo.maintenance_request_id = mr.id
+      WHERE mwo.id = $1
+    `, [id]);
+
+    if (workOrderCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Work order not found'
+      });
+    }
+
+    const workOrder = workOrderCheck.rows[0];
+
+    // Check if user is the assigned workman
+    if (workOrder.workman_id !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only the assigned workman can update work order status'
+      });
+    }
+
+    // Update work order
+    const updateData = {
+      status,
+      notes: notes || workOrder.notes,
+      actual_hours: actual_hours || workOrder.actual_hours,
+      updated_at: new Date()
+    };
+
+    if (status === 'in_progress' && !workOrder.started_date) {
+      updateData.started_date = new Date();
+    } else if (status === 'completed' && !workOrder.completed_date) {
+      updateData.completed_date = new Date();
+    }
+
+    const result = await pool.query(`
+      UPDATE maintenance_work_orders 
+      SET status = $1, notes = $2, actual_hours = $3, started_date = $4, completed_date = $5, updated_at = $6
+      WHERE id = $7
+      RETURNING *
+    `, [updateData.status, updateData.notes, updateData.actual_hours, updateData.started_date, updateData.completed_date, updateData.updated_at, id]);
+
+    // Update maintenance request status if work order is completed
+    if (status === 'completed') {
+      await pool.query(`
+        UPDATE maintenance_requests 
+        SET status = 'completed', completed_date = NOW(), updated_at = NOW()
+        WHERE id = $1
+      `, [workOrder.request_id]);
+    } else if (status === 'in_progress') {
+      await pool.query(`
+        UPDATE maintenance_requests 
+        SET status = 'in_progress', started_date = NOW(), updated_at = NOW()
+        WHERE id = $1
+      `, [workOrder.request_id]);
+    }
+
+    res.json({
+      status: 200,
+      message: 'Work order status updated successfully',
+      work_order: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating work order status:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.post('/api/maintenance-requests/:id/rate', authenticateToken, [
+  body('rating').isInt({ min: 1, max: 5 }),
+  body('feedback').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { rating, feedback } = req.body;
+    const userId = req.user.userId;
+
+    // Get maintenance request
+    const requestCheck = await pool.query(`
+      SELECT tenant_id, status FROM maintenance_requests WHERE id = $1
+    `, [id]);
+
+    if (requestCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Maintenance request not found'
+      });
+    }
+
+    const request = requestCheck.rows[0];
+
+    // Check if user is the tenant who made the request
+    if (request.tenant_id !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only the tenant who made the request can rate it'
+      });
+    }
+
+    if (request.status !== 'completed') {
+      return res.status(400).json({
+        status: 400,
+        message: 'Can only rate completed maintenance requests'
+      });
+    }
+
+    // Update maintenance request with rating
+    await pool.query(`
+      UPDATE maintenance_requests 
+      SET tenant_rating = $1, tenant_feedback = $2, updated_at = NOW()
+      WHERE id = $3
+    `, [rating, feedback, id]);
+
+    res.json({
+      status: 200,
+      message: 'Rating submitted successfully'
+    });
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

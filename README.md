@@ -1,50 +1,88 @@
 # Rently
 
-A React Native mobile application with member registration, sign up, and profile settings features, backed by a PostgreSQL database and Express.js server.
+A comprehensive React Native rental property management application with multi-tenant support, maintenance workflows, chat messaging, and role-based access control. Built with a PostgreSQL database and Express.js server.
 
-## Features
+## 🚀 Features
 
-- **User Authentication**
-  - User registration with email verification
-  - Secure login/logout functionality
-  - JWT token-based authentication
+### **Core Functionality**
+- **User Authentication & Authorization**
+  - Multi-role user system (tenant, landlord, workman, admin)
+  - User registration with organization support for landlords
+  - Secure login/logout with JWT tokens
   - Password hashing with bcrypt
+  - Role-based access control
 
-- **Profile Management**
-  - View and edit user profile information
-  - Change password functionality
-  - Profile image support (ready for implementation)
+- **Multi-Tenancy Support**
+  - Organization-based property management
+  - Landlords can manage multiple properties under their organization
+  - Tenant isolation and data privacy
+  - Subscription plan support
+
+- **Property Management**
+  - Premises and rental unit management
+  - Lease management and tracking
+  - Rental listings with status management
+  - Property amenities and features
+
+### **Maintenance Request System**
+- **Complete Workflow Management**
+  - Tenant maintenance request creation
+  - Landlord approval/rejection workflow
+  - Work order assignment to workmen
+  - Real-time status tracking
+  - Tenant rating and feedback system
+
+- **Advanced Features**
+  - Request types (routine, urgent, emergency)
+  - Priority levels (low, medium, high, critical)
+  - Cost estimation and tracking
+  - Photo attachments support
+  - Notification system
+
+### **Chat & Communication**
+- **Real-time Messaging**
+  - Direct messaging between users
+  - Landlord-tenant communication
+  - Conversation management
+  - Message history and threading
+
+### **Profile & Organization Management**
+- **User Profiles**
+  - Comprehensive user information
+  - Profile image support
   - Account verification status
+  - Organization membership details
 
-- **Security Features**
-  - Secure password storage
-  - JWT token blacklisting
-  - Input validation and sanitization
-  - CORS protection
+- **Organization Management**
+  - Landlord organization setup
+  - Property portfolio management
+  - Subscription plan management
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-### Frontend
+### **Frontend**
 - React Native with Expo
-- React Navigation for routing
-- React Native Paper for UI components
+- React Navigation (Stack + Bottom Tabs)
+- React Native Paper for Material Design UI
 - Expo Secure Store for secure storage
+- TypeScript for type safety
 
-### Backend
+### **Backend**
 - Node.js with Express.js
-- PostgreSQL database
+- PostgreSQL database with advanced indexing
 - JWT for authentication
 - bcrypt for password hashing
 - Express Validator for input validation
+- Multi-tenant database architecture
 
-## Prerequisites
+## 📋 Prerequisites
 
 - Node.js (v14 or higher)
 - PostgreSQL (v12 or higher)
 - Expo CLI
 - React Native development environment
 
-## Installation
+## 🚀 Installation
 
 ### 1. Clone the repository
 ```bash
@@ -54,29 +92,27 @@ cd rently
 
 ### 2. Install dependencies
 ```bash
-# Install backend dependencies
+# Install all dependencies
 npm install
-
-# Install frontend dependencies (if using Expo)
-npx expo install
 ```
 
 ### 3. Database Setup
 
-#### Option A: Using the setup script
+#### Option A: Using the setup script (Recommended)
 ```bash
 # Create a .env file with your database credentials
 cp .env.example .env
 # Edit .env with your actual database credentials
 
-# Run the database setup script
-node server/setup-db.js
+# Run the complete database setup with sample data
+npm run db:push
 ```
 
 #### Option B: Manual setup
 1. Create a PostgreSQL database named `rently`
 2. Update the `.env` file with your database credentials
-3. The tables will be created automatically when you start the server
+3. Run `node server/setup-db.js` to create tables
+4. Run `node server/seed-db.js` to populate sample data
 
 ### 4. Environment Configuration
 Create a `.env` file in the root directory:
@@ -114,18 +150,18 @@ NODE_ENV=development
    ```
    
    This will:
-   - Create the necessary tables
-   - Seed the database with 10 sample users
+   - Create all necessary tables and indexes
+   - Seed the database with sample organizations, users, properties, and maintenance data
    - All users have password: `password123`
 
 3. **Start the Backend Server**
    ```bash
-   npm run dev
+   npm run server
    ```
    
    The server will start and show connection information for different device types.
 
-## Running the Application
+## 🏃‍♂️ Running the Application
 
 ### 1. Start the backend server
 ```bash
@@ -149,95 +185,145 @@ npm run ios
 npm run web
 ```
 
-## API Endpoints
+## 🔌 API Endpoints
 
-### Authentication
-- `POST /api/auth/register` - User registration
+### **Authentication**
+- `POST /api/auth/register` - User registration with organization support
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 
-### User Profile
+### **User Management**
 - `GET /api/user/profile` - Get user profile
 - `PUT /api/user/profile` - Update user profile
 - `PUT /api/user/change-password` - Change password
 
-### Health Check
+### **Organization Management**
+- `GET /api/organizations/:id` - Get organization details
+- `PUT /api/organizations/:id` - Update organization
+
+### **Property Management**
+- `GET /api/premises` - List premises (filtered by organization)
+- `POST /api/premises` - Create new premises
+- `GET /api/rental-units` - List rental units
+- `POST /api/rental-units` - Create rental units
+- `GET /api/leases` - List leases
+- `POST /api/leases` - Create leases
+- `GET /api/rental-listings` - List rental listings
+- `POST /api/rental-listings` - Create rental listings
+
+### **Maintenance System**
+- `POST /api/maintenance-requests` - Create maintenance request
+- `GET /api/maintenance-requests` - List requests with filtering
+- `GET /api/maintenance-requests/:id` - Get request details
+- `PUT /api/maintenance-requests/:id/approve` - Approve/reject request
+- `POST /api/maintenance-requests/:id/assign` - Assign work order
+- `PUT /api/work-orders/:id/status` - Update work order status
+- `POST /api/maintenance-requests/:id/rate` - Rate completed request
+
+### **Chat & Messaging**
+- `GET /api/conversations` - List user conversations
+- `GET /api/conversations/:id` - Get conversation details
+- `GET /api/conversations/:id/messages` - Get conversation messages
+- `POST /api/conversations/:id/messages` - Send message
+- `POST /api/conversations` - Create new conversation
+
+### **Health Check**
 - `GET /api/health` - Server health status
 
-## Database Schema
+## 🗄️ Database Schema
 
-### Users Table
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
-  phone VARCHAR(20),
-  date_of_birth DATE,
-  address TEXT,
-  profile_image_url TEXT,
-  is_verified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### **Core Tables**
+- `users` - User accounts with role-based access
+- `organizations` - Multi-tenant organization support
+- `premises` - Property locations and details
+- `rental_units` - Individual rental units
+- `leases` - Lease agreements and terms
+- `rental_listings` - Property listings and availability
 
-### User Sessions Table
-```sql
-CREATE TABLE user_sessions (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  token_hash VARCHAR(255) NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### **Maintenance System**
+- `maintenance_requests` - Maintenance request tracking
+- `maintenance_work_orders` - Work order management
+- `maintenance_approvals` - Approval workflow
+- `maintenance_photos` - Photo attachments
+- `maintenance_notifications` - Notification system
+
+### **Communication**
+- `conversations` - Chat conversations
+- `conversation_participants` - Conversation membership
+- `messages` - Individual messages
+
+### **Security & Sessions**
+- `user_sessions` - JWT token management
 
 ## 📊 Sample Data
 
-The application comes with 10 pre-configured test users for development and testing:
+The application comes with comprehensive sample data for development and testing:
 
-| Email | Name | Phone | Location |
-|-------|------|-------|----------|
-| john.doe@example.com | John Doe | +1-555-0101 | New York, NY |
-| jane.smith@example.com | Jane Smith | +1-555-0102 | Los Angeles, CA |
-| mike.johnson@example.com | Mike Johnson | +1-555-0103 | Chicago, IL |
-| sarah.wilson@example.com | Sarah Wilson | +1-555-0104 | Houston, TX |
-| david.brown@example.com | David Brown | +1-555-0105 | Phoenix, AZ |
-| emma.davis@example.com | Emma Davis | +1-555-0106 | Philadelphia, PA |
-| alex.garcia@example.com | Alex Garcia | +1-555-0107 | San Antonio, TX |
-| lisa.martinez@example.com | Lisa Martinez | +1-555-0108 | San Diego, CA |
-| tom.anderson@example.com | Tom Anderson | +1-555-0109 | Dallas, TX |
-| rachel.taylor@example.com | Rachel Taylor | +1-555-0110 | San Jose, CA |
+### **Organizations**
+- Sunset Property Management
+- Downtown Real Estate Group  
+- Riverside Property Solutions
 
-**All users have the password: `password123`**
+### **Users (Password: `password123`)**
+| Email | Name | Role | Organization |
+|-------|------|------|--------------|
+| john.doe@example.com | John Doe | Tenant | - |
+| jane.smith@example.com | Jane Smith | Landlord | Sunset Property Management |
+| mike.johnson@example.com | Mike Johnson | Tenant | - |
+| sarah.wilson@example.com | Sarah Wilson | Landlord | Downtown Real Estate Group |
+| david.brown@example.com | David Brown | Tenant | - |
+| emma.davis@example.com | Emma Davis | Landlord | Riverside Property Solutions |
+| alex.garcia@example.com | Alex Garcia | Tenant | - |
+| lisa.martinez@example.com | Lisa Martinez | Landlord | Sunset Property Management |
+| tom.anderson@example.com | Tom Anderson | Workman | - |
+| rachel.taylor@example.com | Rachel Taylor | Landlord | Downtown Real Estate Group |
 
-## Project Structure
+### **Sample Data Includes**
+- 5 premises with rental units
+- 2 active leases
+- 3 rental listings
+- 4 maintenance requests with workflow examples
+- 3 work orders with status tracking
+- 4 conversations with sample messages
+
+## 📁 Project Structure
 
 ```
 rently/
 ├── server/                 # Backend server
-│   ├── index.js           # Main server file
+│   ├── index.js           # Main server with all API endpoints
 │   ├── config.js          # Server configuration
 │   ├── setup-db.js        # Database setup script
-│   └── seed-db.js         # Database seeding script
+│   ├── seed-db.js         # Database seeding script
+│   └── reset-db.js        # Database reset utility
 ├── src/                   # Frontend source code
 │   ├── components/        # Reusable UI components
-│   │   └── NetworkStatus.tsx
+│   │   ├── NetworkStatus.tsx
+│   │   └── SideMenu.tsx   # Slide-out navigation menu
 │   ├── config/            # Configuration files
-│   │   ├── app.ts         # App configuration (name, API settings)
-│   │   └── api.ts         # API configuration (deprecated, use app.ts)
+│   │   ├── app.ts         # App configuration
+│   │   └── api.ts         # API configuration
 │   ├── contexts/          # React contexts
 │   │   └── AuthContext.tsx
 │   ├── navigation/        # Navigation components
 │   │   └── AppNavigator.tsx
 │   └── screens/           # App screens
-│       ├── HomeScreen.tsx
-│       ├── LoginScreen.tsx
-│       ├── RegisterScreen.tsx
-│       └── ProfileScreen.tsx
+│       ├── HomeScreen.tsx          # Main dashboard
+│       ├── LoginScreen.tsx         # Authentication
+│       ├── RegisterScreen.tsx      # User registration
+│       ├── ProfileScreen.tsx       # User profile
+│       ├── OrganizationManagementScreen.tsx  # Organization settings
+│       ├── PremisesManagementScreen.tsx      # Property management
+│       ├── RentalUnitsScreen.tsx            # Unit management
+│       ├── RentalListingsScreen.tsx         # Listing management
+│       ├── LeaseManagementScreen.tsx        # Lease management
+│       ├── MyLeasesScreen.tsx               # Tenant lease view
+│       ├── RentPaymentsScreen.tsx           # Payment tracking
+│       ├── MaintenanceRequestsScreen.tsx    # Tenant maintenance
+│       ├── LandlordMaintenanceScreen.tsx    # Landlord maintenance
+│       ├── WorkmanMaintenanceScreen.tsx     # Workman tasks
+│       ├── ConversationsScreen.tsx          # Chat list
+│       └── ChatScreen.tsx                   # Individual chat
 ├── scripts/               # Utility scripts
 │   ├── get-ip.js          # Get local IP address
 │   └── update-app-name.js # Update app name in config files
@@ -247,17 +333,30 @@ rently/
 └── README.md              # This file
 ```
 
-## Development
+## 🔧 Development
 
-### Adding New Features
+### **Adding New Features**
 1. Create new screen components in `src/screens/`
 2. Add navigation routes in `src/navigation/AppNavigator.tsx`
 3. Create API endpoints in `server/index.js`
-4. Update database schema if needed
+4. Update database schema in `server/setup-db.js` if needed
+5. Add sample data in `server/seed-db.js`
+
+### **Database Management**
+```bash
+# Reset database completely
+node server/reset-db.js
+
+# Recreate tables and seed data
+npm run db:push
+
+# Start server
+npm run server
+```
 
 ## 🔧 Troubleshooting
 
-### App Name Configuration
+### **App Name Configuration**
 
 The app name is now configurable and automatically read from `app.json`. To change the app name:
 
@@ -270,12 +369,12 @@ The app name is now configurable and automatically read from `app.json`. To chan
 
 This will automatically update all configuration files with the new app name.
 
-### Network Connection Issues
+### **Network Connection Issues**
 
 If you encounter "Network request failed" errors:
 
 #### 1. **Check Server Status**
-   - Ensure the backend server is running: `npm run dev`
+   - Ensure the backend server is running: `npm run server`
    - Check server console for startup messages
    - Verify the server shows network accessibility information
 
@@ -315,69 +414,96 @@ If you encounter "Network request failed" errors:
 #### 5. **Common Solutions**
    ```bash
    # Restart the server
-   npm run dev
+   npm run server
    
    # Check if port 3000 is in use
-   netstat -an | grep 3000
+   netstat -an | findstr :3000
    
    # Kill process using port 3000 (if needed)
    npx kill-port 3000
    ```
 
-### Database Connection Issues
+### **Database Connection Issues**
    - Verify PostgreSQL is running
    - Check `.env` file configuration
    - Ensure database `rently` exists
    - Run `npm run db:push` to recreate tables
 
-### Code Style
+### **Code Style**
 - Use TypeScript for type safety
 - Follow React Native best practices
 - Use React Native Paper components for consistent UI
 - Implement proper error handling and loading states
 
-## Security Considerations
+## 🔒 Security Considerations
 
 - JWT tokens are stored securely using Expo Secure Store
 - Passwords are hashed using bcrypt with 12 salt rounds
 - Input validation is implemented on both client and server
 - CORS is configured for security
 - JWT tokens are blacklisted on logout
+- Role-based access control for all endpoints
+- Multi-tenant data isolation
 
-## Troubleshooting
+## 🚨 Common Issues
 
-### Common Issues
-
+### **Database Issues**
 1. **Database Connection Error**
    - Verify PostgreSQL is running
    - Check database credentials in `.env`
    - Ensure database `rently` exists
 
-2. **Port Already in Use**
+2. **Schema Changes**
+   - Run `node server/reset-db.js` to clear database
+   - Run `npm run db:push` to recreate with new schema
+
+### **Server Issues**
+1. **Port Already in Use**
    - Change the port in `.env` file
    - Kill existing processes using the port
 
-3. **Expo Build Issues**
+2. **JWT Token Issues**
+   - Clear app data and re-login
+   - Check JWT_SECRET in `.env`
+
+### **Expo Issues**
+1. **Build Issues**
    - Clear Expo cache: `npx expo start --clear`
    - Update Expo CLI: `npm install -g @expo/cli`
 
-### Getting Help
+2. **Navigation Issues**
+   - Check navigation dependencies are installed
+   - Verify screen components are properly exported
+
+### **Getting Help**
 - Check the console for error messages
 - Verify all dependencies are installed
 - Ensure environment variables are set correctly
+- Check database schema matches code expectations
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly with the provided sample data
 5. Submit a pull request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License.
 
-## Support
+## 🆘 Support
 
-For support and questions, please open an issue in the repository. 
+For support and questions, please open an issue in the repository.
+
+## 🎯 Roadmap
+
+### **Planned Features**
+- Real-time notifications
+- File upload support for maintenance photos
+- Advanced reporting and analytics
+- Mobile app push notifications
+- Integration with payment gateways
+- Advanced search and filtering
+- Calendar integration for maintenance scheduling 

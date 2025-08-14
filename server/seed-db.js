@@ -141,7 +141,7 @@ const fakeUsers = [
     phone: '+1-555-0109',
     date_of_birth: '1984-04-05',
     address: '369 Spruce St, Dallas, TX 75201',
-    user_type: 'tenant'
+    user_type: 'workman'
   },
   {
     email: 'rachel.taylor@example.com',
@@ -152,7 +152,8 @@ const fakeUsers = [
     date_of_birth: '1993-12-20',
     address: '741 Poplar Ave, San Jose, CA 95101',
     user_type: 'landlord'
-  }
+  },
+
 ];
 
 const fakePremises = [
@@ -347,6 +348,143 @@ const fakeConversations = [
   {
     conversation_type: 'general',
     title: 'General Property Questions',
+  }
+];
+
+const fakeMaintenanceRequests = [
+  {
+    title: 'Leaky Kitchen Faucet',
+    description: 'The kitchen faucet is dripping constantly and needs repair. Water is accumulating under the sink.',
+    request_type: 'routine',
+    priority: 'medium',
+    status: 'approved',
+    premises_id: 1,
+    rental_unit_id: 1,
+    tenant_id: 1, // John Doe
+    landlord_id: 2, // Jane Smith
+    estimated_cost: 150.00,
+    requested_date: '2024-01-15T10:00:00Z',
+    approved_date: '2024-01-16T09:00:00Z',
+    assigned_date: '2024-01-17T08:00:00Z',
+    started_date: '2024-01-18T09:00:00Z',
+    completed_date: '2024-01-18T14:00:00Z',
+    actual_cost: 145.00,
+    tenant_rating: 5,
+    tenant_feedback: 'Excellent work! The faucet is working perfectly now.'
+  },
+  {
+    title: 'Broken Window Lock',
+    description: 'The lock on the bedroom window is broken and won\'t secure properly. This is a security concern.',
+    request_type: 'urgent',
+    priority: 'high',
+    status: 'in_progress',
+    premises_id: 1,
+    rental_unit_id: 2,
+    tenant_id: 3, // Mike Johnson
+    landlord_id: 2, // Jane Smith
+    estimated_cost: 75.00,
+    requested_date: '2024-01-20T14:00:00Z',
+    approved_date: '2024-01-20T16:00:00Z',
+    assigned_date: '2024-01-21T09:00:00Z',
+    started_date: '2024-01-21T10:00:00Z'
+  },
+  {
+    title: 'HVAC System Not Working',
+    description: 'The air conditioning unit is not cooling properly. It makes strange noises and only blows warm air.',
+    request_type: 'emergency',
+    priority: 'critical',
+    status: 'pending',
+    premises_id: 2,
+    rental_unit_id: 3,
+    tenant_id: 5, // David Brown
+    landlord_id: 4, // Sarah Wilson
+    estimated_cost: 300.00,
+    requested_date: '2024-01-22T08:00:00Z'
+  },
+  {
+    title: 'Garbage Disposal Jammed',
+    description: 'The garbage disposal is stuck and won\'t turn on. There might be something lodged inside.',
+    request_type: 'routine',
+    priority: 'medium',
+    status: 'assigned',
+    premises_id: 3,
+    rental_unit_id: 5,
+    tenant_id: 7, // Alex Garcia
+    landlord_id: 6, // Emma Davis
+    estimated_cost: 120.00,
+    requested_date: '2024-01-19T11:00:00Z',
+    approved_date: '2024-01-20T10:00:00Z',
+    assigned_date: '2024-01-21T13:00:00Z'
+  }
+];
+
+const fakeWorkOrders = [
+  {
+    maintenance_request_id: 1,
+    workman_id: 9, // Tom Anderson (workman)
+    work_order_number: 'WO-2024-001',
+    work_description: 'Replace kitchen faucet cartridge and fix water leak under sink',
+    estimated_hours: 2,
+    materials_required: ['faucet cartridge', 'plumber\'s tape', 'silicone sealant'],
+    special_instructions: 'Ensure water is completely turned off before starting work',
+    status: 'completed',
+    assigned_date: '2024-01-17T08:00:00Z',
+    started_date: '2024-01-18T09:00:00Z',
+    completed_date: '2024-01-18T14:00:00Z',
+    actual_hours: 2.5,
+    notes: 'Replaced cartridge and sealed all connections. No more leaks.'
+  },
+  {
+    maintenance_request_id: 2,
+    workman_id: 9, // Tom Anderson (workman)
+    work_order_number: 'WO-2024-002',
+    work_description: 'Replace broken window lock mechanism',
+    estimated_hours: 1,
+    materials_required: ['new window lock', 'screws', 'screwdriver'],
+    special_instructions: 'Test lock functionality after installation',
+    status: 'in_progress',
+    assigned_date: '2024-01-21T09:00:00Z',
+    started_date: '2024-01-21T10:00:00Z',
+    actual_hours: 1
+  },
+  {
+    maintenance_request_id: 4,
+    workman_id: 9, // Tom Anderson (workman)
+    work_order_number: 'WO-2024-003',
+    work_description: 'Inspect and repair garbage disposal unit',
+    estimated_hours: 1.5,
+    materials_required: ['garbage disposal wrench', 'replacement parts if needed'],
+    special_instructions: 'Check for foreign objects that may be causing the jam',
+    status: 'assigned',
+    assigned_date: '2024-01-21T13:00:00Z',
+    actual_hours: 1.5
+  }
+];
+
+const fakeMaintenanceApprovals = [
+  {
+    maintenance_request_id: 1,
+    approver_id: 2, // Jane Smith (landlord)
+    approval_type: 'landlord',
+    status: 'approved',
+    comments: 'Approved - routine maintenance, reasonable cost estimate',
+    approved_at: '2024-01-16T09:00:00Z'
+  },
+  {
+    maintenance_request_id: 2,
+    approver_id: 2, // Jane Smith (landlord)
+    approval_type: 'landlord',
+    status: 'approved',
+    comments: 'Approved - security issue, needs immediate attention',
+    approved_at: '2024-01-20T16:00:00Z'
+  },
+  {
+    maintenance_request_id: 4,
+    approver_id: 6, // Emma Davis (landlord)
+    approval_type: 'landlord',
+    status: 'approved',
+    comments: 'Approved - standard repair, good price',
+    approved_at: '2024-01-20T10:00:00Z'
   }
 ];
 
@@ -668,6 +806,100 @@ async function seedDatabase() {
       console.log(`✅ Created message in conversation ${message.conversation_id}`);
     }
 
+    // Insert fake maintenance requests
+    console.log('\n🔧 Creating maintenance requests...');
+    for (const request of fakeMaintenanceRequests) {
+      const query = `
+        INSERT INTO maintenance_requests (
+          title, description, request_type, priority, status, premises_id, rental_unit_id,
+          tenant_id, landlord_id, estimated_cost, actual_cost, requested_date, approved_date,
+          assigned_date, started_date, completed_date, tenant_rating, tenant_feedback,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW())
+        RETURNING id
+      `;
+      
+      const values = [
+        request.title,
+        request.description,
+        request.request_type,
+        request.priority,
+        request.status,
+        request.premises_id,
+        request.rental_unit_id,
+        request.tenant_id,
+        request.landlord_id,
+        request.estimated_cost,
+        request.actual_cost,
+        request.requested_date,
+        request.approved_date,
+        request.assigned_date,
+        request.started_date,
+        request.completed_date,
+        request.tenant_rating,
+        request.tenant_feedback
+      ];
+      
+      const result = await pool.query(query, values);
+      console.log(`✅ Created maintenance request: ${request.title}`);
+    }
+
+    // Insert fake maintenance approvals
+    console.log('\n✅ Creating maintenance approvals...');
+    for (const approval of fakeMaintenanceApprovals) {
+      const query = `
+        INSERT INTO maintenance_approvals (
+          maintenance_request_id, approver_id, approval_type, status, comments, approved_at, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING id
+      `;
+      
+      const values = [
+        approval.maintenance_request_id,
+        approval.approver_id,
+        approval.approval_type,
+        approval.status,
+        approval.comments,
+        approval.approved_at
+      ];
+      
+      await pool.query(query, values);
+      console.log(`✅ Created approval for request ${approval.maintenance_request_id}`);
+    }
+
+    // Insert fake work orders
+    console.log('\n📋 Creating work orders...');
+    for (const workOrder of fakeWorkOrders) {
+      const query = `
+        INSERT INTO maintenance_work_orders (
+          maintenance_request_id, workman_id, work_order_number, work_description,
+          estimated_hours, materials_required, special_instructions, status,
+          assigned_date, started_date, completed_date, actual_hours, notes,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+        RETURNING id
+      `;
+      
+      const values = [
+        workOrder.maintenance_request_id,
+        workOrder.workman_id,
+        workOrder.work_order_number,
+        workOrder.work_description,
+        workOrder.estimated_hours,
+        workOrder.materials_required,
+        workOrder.special_instructions,
+        workOrder.status,
+        workOrder.assigned_date,
+        workOrder.started_date,
+        workOrder.completed_date,
+        workOrder.actual_hours,
+        workOrder.notes
+      ];
+      
+      await pool.query(query, values);
+      console.log(`✅ Created work order: ${workOrder.work_order_number}`);
+    }
+
     // Insert fake rental listings
     console.log('\n📢 Creating rental listings...');
     for (const listing of fakeRentalListings) {
@@ -702,6 +934,9 @@ async function seedDatabase() {
     console.log(`   - ${fakeRentalListings.length} rental listings`);
     console.log(`   - ${fakeConversations.length} conversations`);
     console.log(`   - ${fakeMessages.length} messages`);
+    console.log(`   - ${fakeMaintenanceRequests.length} maintenance requests`);
+    console.log(`   - ${fakeMaintenanceApprovals.length} maintenance approvals`);
+    console.log(`   - ${fakeWorkOrders.length} work orders`);
     console.log('\n📋 Test Login Credentials:');
     console.log('All users use password: password123');
     console.log('Landlords: jane.smith@example.com, sarah.wilson@example.com');
