@@ -1,45 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
   Alert,
-  TouchableOpacity,
 } from 'react-native';
 import {
-  Text,
-  Title,
-  Surface,
   Card,
+  Title,
+  Paragraph,
+  Button,
   Chip,
-  useTheme,
   FAB,
   Portal,
   Modal,
   TextInput,
-  Button,
-  List,
-  Searchbar,
   SegmentedButtons,
+  List,
   Divider,
+  Badge,
+  ProgressBar,
 } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface MaintenanceRequest {
   id: number;
   title: string;
   description: string;
-  request_type: string;
-  priority: string;
-  status: string;
+  request_type: 'routine' | 'urgent' | 'emergency';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'approved' | 'rejected' | 'assigned' | 'in_progress' | 'completed';
   premises_name: string;
-  premises_address: string;
-  unit_number?: string;
-  estimated_cost?: number;
-  actual_cost?: number;
+  unit_number: string;
+  estimated_cost: string;
   requested_date: string;
   approved_date?: string;
   assigned_date?: string;
@@ -51,244 +47,134 @@ interface MaintenanceRequest {
   work_order_status?: string;
   workman_first_name?: string;
   workman_last_name?: string;
+  work_order_description?: string;
+  estimated_hours?: number;
+  actual_hours?: number;
+  work_order_notes?: string;
 }
 
 const MaintenanceRequestsScreen: React.FC = () => {
   const { user } = useAuth();
-  const navigation = useNavigation();
-  const theme = useTheme();
-  
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<MaintenanceRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [modalVisible, setModalVisible] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [newRequestModalVisible, setNewRequestModalVisible] = useState(false);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
-  
   const [newRequest, setNewRequest] = useState({
     title: '',
     description: '',
-    request_type: 'routine',
-    priority: 'medium',
-    premises_id: '',
-    rental_unit_id: '',
-    estimated_cost: '',
+    request_type: 'routine' as MaintenanceRequest['request_type'],
+    priority: 'medium' as MaintenanceRequest['priority'],
   });
-
   const [ratingData, setRatingData] = useState({
     rating: 5,
     feedback: '',
   });
 
-  const requestTypes = [
-    { value: 'routine', label: 'Routine', icon: 'wrench' },
-    { value: 'urgent', label: 'Urgent', icon: 'alert' },
-    { value: 'emergency', label: 'Emergency', icon: 'fire' },
-    { value: 'preventive', label: 'Preventive', icon: 'shield' },
-  ];
-
-  const priorities = [
-    { value: 'low', label: 'Low', color: '#4caf50' },
-    { value: 'medium', label: 'Medium', color: '#ff9800' },
-    { value: 'high', label: 'High', color: '#f44336' },
-    { value: 'critical', label: 'Critical', color: '#9c27b0' },
-  ];
-
-  const statuses = [
-    { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'assigned', label: 'Assigned' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'rejected', label: 'Rejected' },
+  // Mock data for demonstration
+  const mockMaintenanceRequests: MaintenanceRequest[] = [
+    {
+      id: 1,
+      title: 'Leaky Kitchen Faucet',
+      description: 'The kitchen faucet is dripping constantly and needs repair.',
+      request_type: 'routine',
+      priority: 'medium',
+      status: 'completed',
+      premises_name: 'Sunset Gardens Apartments',
+      unit_number: '101',
+      estimated_cost: '150.00',
+      requested_date: '2024-01-15T15:00:00Z',
+      approved_date: '2024-01-16T09:00:00Z',
+      assigned_date: '2024-01-17T08:00:00Z',
+      started_date: '2024-01-18T09:00:00Z',
+      completed_date: '2024-01-18T14:00:00Z',
+      work_order_number: 'WO-2024-001',
+      work_order_status: 'completed',
+      workman_first_name: 'Tom',
+      workman_last_name: 'Anderson',
+      work_order_description: 'Replace kitchen faucet cartridge and fix water leak under sink',
+      estimated_hours: 2,
+      actual_hours: 2.5,
+      work_order_notes: 'Replaced cartridge and sealed all connections. No more leaks.',
+    },
+    {
+      id: 2,
+      title: 'Broken Window Lock',
+      description: 'The lock on the bedroom window is broken and won\'t secure properly.',
+      request_type: 'urgent',
+      priority: 'high',
+      status: 'in_progress',
+      premises_name: 'Sunset Gardens Apartments',
+      unit_number: '101',
+      estimated_cost: '75.00',
+      requested_date: '2024-01-20T19:00:00Z',
+      approved_date: '2024-01-20T21:00:00Z',
+      assigned_date: '2024-01-21T09:00:00Z',
+      started_date: '2024-01-21T10:00:00Z',
+      work_order_number: 'WO-2024-002',
+      work_order_status: 'in_progress',
+      workman_first_name: 'Tom',
+      workman_last_name: 'Anderson',
+      work_order_description: 'Replace broken window lock mechanism',
+      estimated_hours: 1,
+      work_order_notes: 'Started work on window lock replacement',
+    },
+    {
+      id: 3,
+      title: 'HVAC System Not Working',
+      description: 'The air conditioning unit is not cooling properly.',
+      request_type: 'emergency',
+      priority: 'critical',
+      status: 'assigned',
+      premises_name: 'Sunset Gardens Apartments',
+      unit_number: '101',
+      estimated_cost: '300.00',
+      requested_date: '2024-01-18T10:00:00Z',
+      approved_date: '2024-01-18T14:00:00Z',
+      assigned_date: '2024-01-19T09:00:00Z',
+      work_order_number: 'WO-2024-004',
+      work_order_status: 'assigned',
+      workman_first_name: 'Tom',
+      workman_last_name: 'Anderson',
+      work_order_description: 'Inspect and repair HVAC system',
+      estimated_hours: 3,
+    },
+    {
+      id: 4,
+      title: 'Garbage Disposal Jammed',
+      description: 'The garbage disposal is stuck and won\'t turn on.',
+      request_type: 'routine',
+      priority: 'medium',
+      status: 'pending',
+      premises_name: 'Sunset Gardens Apartments',
+      unit_number: '101',
+      estimated_cost: '120.00',
+      requested_date: '2024-01-22T14:00:00Z',
+    },
   ];
 
   useEffect(() => {
     loadMaintenanceRequests();
   }, []);
 
-  useEffect(() => {
-    filterRequests();
-  }, [searchQuery, statusFilter, maintenanceRequests]);
-
   const loadMaintenanceRequests = async () => {
-    setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const response = await api.get('/maintenance-requests');
-      // setMaintenanceRequests(response.data.maintenance_requests);
+      setLoading(true);
+      // In a real app, this would be an API call
+      // const response = await fetch('/api/maintenance-requests?tenant_id=' + user?.id);
+      // const data = await response.json();
       
-      // Mock data for now
-      setMaintenanceRequests([
-        {
-          id: 1,
-          title: 'Leaky Kitchen Faucet',
-          description: 'The kitchen faucet is dripping constantly and needs repair. Water is accumulating under the sink.',
-          request_type: 'routine',
-          priority: 'medium',
-          status: 'completed',
-          premises_name: 'Sunset Gardens Apartments',
-          premises_address: '123 Sunset Blvd, Los Angeles, CA 90210',
-          unit_number: '101',
-          estimated_cost: 150.00,
-          actual_cost: 145.00,
-          requested_date: '2024-01-15T10:00:00Z',
-          approved_date: '2024-01-16T09:00:00Z',
-          assigned_date: '2024-01-17T08:00:00Z',
-          started_date: '2024-01-18T09:00:00Z',
-          completed_date: '2024-01-18T14:00:00Z',
-          tenant_rating: 5,
-          tenant_feedback: 'Excellent work! The faucet is working perfectly now.',
-          work_order_number: 'WO-2024-001',
-          work_order_status: 'completed',
-          workman_first_name: 'Tom',
-          workman_last_name: 'Anderson',
-        },
-        {
-          id: 2,
-          title: 'Broken Window Lock',
-          description: 'The lock on the bedroom window is broken and won\'t secure properly. This is a security concern.',
-          request_type: 'urgent',
-          priority: 'high',
-          status: 'in_progress',
-          premises_name: 'Sunset Gardens Apartments',
-          premises_address: '123 Sunset Blvd, Los Angeles, CA 90210',
-          unit_number: '202',
-          estimated_cost: 75.00,
-          requested_date: '2024-01-20T14:00:00Z',
-          approved_date: '2024-01-20T16:00:00Z',
-          assigned_date: '2024-01-21T09:00:00Z',
-          started_date: '2024-01-21T10:00:00Z',
-          work_order_number: 'WO-2024-002',
-          work_order_status: 'in_progress',
-          workman_first_name: 'Tom',
-          workman_last_name: 'Anderson',
-        },
-        {
-          id: 3,
-          title: 'HVAC System Not Working',
-          description: 'The air conditioning unit is not cooling properly. It makes strange noises and only blows warm air.',
-          request_type: 'emergency',
-          priority: 'critical',
-          status: 'pending',
-          premises_name: 'Downtown Lofts',
-          premises_address: '456 Main Street, Chicago, IL 60601',
-          unit_number: 'A1',
-          estimated_cost: 300.00,
-          requested_date: '2024-01-22T08:00:00Z',
-        },
-      ]);
+      // For now, use mock data
+      setMaintenanceRequests(mockMaintenanceRequests);
     } catch (error) {
-      console.error('Failed to load maintenance requests:', error);
+      console.error('Error loading maintenance requests:', error);
       Alert.alert('Error', 'Failed to load maintenance requests');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  const filterRequests = () => {
-    let filtered = maintenanceRequests;
-
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(request => request.status === statusFilter);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(request =>
-        request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        request.premises_name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setFilteredRequests(filtered);
-  };
-
-  const handleCreateRequest = async () => {
-    if (!newRequest.title.trim() || !newRequest.description.trim()) {
-      Alert.alert('Error', 'Title and description are required');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await api.post('/maintenance-requests', newRequest);
-      // await loadMaintenanceRequests();
-      
-      // Mock success
-      setModalVisible(false);
-      setNewRequest({
-        title: '',
-        description: '',
-        request_type: 'routine',
-        priority: 'medium',
-        premises_id: '',
-        rental_unit_id: '',
-        estimated_cost: '',
-      });
-      await loadMaintenanceRequests();
-      Alert.alert('Success', 'Maintenance request created successfully');
-    } catch (error) {
-      console.error('Failed to create maintenance request:', error);
-      Alert.alert('Error', 'Failed to create maintenance request');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRateRequest = async () => {
-    if (!selectedRequest) return;
-
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // await api.post(`/maintenance-requests/${selectedRequest.id}/rate`, ratingData);
-      // await loadMaintenanceRequests();
-      
-      // Mock success
-      setRatingModalVisible(false);
-      setRatingData({ rating: 5, feedback: '' });
-      await loadMaintenanceRequests();
-      Alert.alert('Success', 'Rating submitted successfully');
-    } catch (error) {
-      console.error('Failed to submit rating:', error);
-      Alert.alert('Error', 'Failed to submit rating');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return '#ff9800';
-      case 'approved': return '#2196f3';
-      case 'assigned': return '#9c27b0';
-      case 'in_progress': return '#ff5722';
-      case 'completed': return '#4caf50';
-      case 'rejected': return '#f44336';
-      default: return '#9e9e9e';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    const priorityInfo = priorities.find(p => p.value === priority);
-    return priorityInfo?.color || '#9e9e9e';
-  };
-
-  const getRequestTypeIcon = (type: string) => {
-    const typeInfo = requestTypes.find(t => t.value === type);
-    return typeInfo?.icon || 'wrench';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
   };
 
   const onRefresh = async () => {
@@ -297,253 +183,550 @@ const MaintenanceRequestsScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const openRatingModal = (request: MaintenanceRequest) => {
-    setSelectedRequest(request);
-    setRatingModalVisible(true);
+  const handleCreateRequest = async () => {
+    if (!newRequest.title || !newRequest.description) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    try {
+      // In a real app, this would be an API call
+      // const response = await fetch('/api/maintenance-requests', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(newRequest),
+      // });
+
+      // Create new request with mock data
+      const newMaintenanceRequest: MaintenanceRequest = {
+        id: Date.now(),
+        ...newRequest,
+        status: 'pending',
+        premises_name: 'Sunset Gardens Apartments',
+        unit_number: '101',
+        estimated_cost: '0.00',
+        requested_date: new Date().toISOString(),
+      };
+
+      setMaintenanceRequests(prev => [newMaintenanceRequest, ...prev]);
+      setNewRequestModalVisible(false);
+      setNewRequest({
+        title: '',
+        description: '',
+        request_type: 'routine',
+        priority: 'medium',
+      });
+      Alert.alert('Success', 'Maintenance request created successfully');
+    } catch (error) {
+      console.error('Error creating maintenance request:', error);
+      Alert.alert('Error', 'Failed to create maintenance request');
+    }
   };
 
-  const navigateToDetails = (request: MaintenanceRequest) => {
-    navigation.navigate('MaintenanceRequestDetails' as never, { requestId: request.id } as never);
+  const handleRateRequest = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      // In a real app, this would be an API call
+      // await fetch(`/api/maintenance-requests/${selectedRequest.id}/rate`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(ratingData),
+      // });
+
+      // Update local state
+      setMaintenanceRequests(prev => 
+        prev.map(req => 
+          req.id === selectedRequest.id 
+            ? { ...req, tenant_rating: ratingData.rating, tenant_feedback: ratingData.feedback }
+            : req
+        )
+      );
+
+      setRatingModalVisible(false);
+      setSelectedRequest(null);
+      setRatingData({ rating: 5, feedback: '' });
+      Alert.alert('Success', 'Thank you for your feedback!');
+    } catch (error) {
+      console.error('Error rating maintenance request:', error);
+      Alert.alert('Error', 'Failed to submit rating');
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return '#FF9800';
+      case 'approved': return '#2196F3';
+      case 'rejected': return '#F44336';
+      case 'assigned': return '#9C27B0';
+      case 'in_progress': return '#FF9800';
+      case 'completed': return '#4CAF50';
+      default: return '#757575';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low': return '#4CAF50';
+      case 'medium': return '#FF9800';
+      case 'high': return '#F44336';
+      case 'critical': return '#9C27B0';
+      default: return '#757575';
+    }
+  };
+
+  const getRequestTypeIcon = (type: string) => {
+    switch (type) {
+      case 'routine': return 'build';
+      case 'urgent': return 'warning';
+      case 'emergency': return 'emergency';
+      default: return 'build';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return 'schedule';
+      case 'approved': return 'check-circle';
+      case 'rejected': return 'cancel';
+      case 'assigned': return 'assignment';
+      case 'in_progress': return 'engineering';
+      case 'completed': return 'done-all';
+      default: return 'schedule';
+    }
+  };
+
+  const filteredRequests = maintenanceRequests.filter(request => {
+    if (filterStatus !== 'all' && request.status !== filterStatus) return false;
+    if (filterType !== 'all' && request.request_type !== filterType) return false;
+    return true;
+  });
+
+  const pendingRequests = filteredRequests.filter(req => req.status === 'pending');
+  const activeRequests = filteredRequests.filter(req => ['approved', 'assigned', 'in_progress'].includes(req.status));
+  const completedRequests = filteredRequests.filter(req => req.status === 'completed');
+
+  const getStatusProgress = (request: MaintenanceRequest) => {
+    const steps = ['pending', 'approved', 'assigned', 'in_progress', 'completed'];
+    const currentStep = steps.indexOf(request.status);
+    return currentStep >= 0 ? (currentStep + 1) / steps.length : 0;
   };
 
   return (
     <View style={styles.container}>
       <ScrollView
-        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Surface style={styles.header}>
-          <Title style={styles.title}>Maintenance Requests</Title>
-          <Text style={styles.subtitle}>
-            Submit and track maintenance requests for your rental unit
-          </Text>
-        </Surface>
+        {/* Filters */}
+        <Card style={styles.filterCard}>
+          <Card.Content>
+            <Title style={styles.sectionTitle}>Filters</Title>
+            <SegmentedButtons
+              value={filterStatus}
+              onValueChange={setFilterStatus}
+              buttons={[
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+            <SegmentedButtons
+              value={filterType}
+              onValueChange={setFilterType}
+              buttons={[
+                { value: 'all', label: 'All Types' },
+                { value: 'routine', label: 'Routine' },
+                { value: 'urgent', label: 'Urgent' },
+                { value: 'emergency', label: 'Emergency' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+          </Card.Content>
+        </Card>
 
-        <Searchbar
-          placeholder="Search requests..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
-
-        <SegmentedButtons
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          buttons={statuses.map(status => ({ value: status.value, label: status.label }))}
-          style={styles.statusFilter}
-        />
-
-        {filteredRequests.map((request) => (
-          <TouchableOpacity
-            key={request.id}
-            onPress={() => navigateToDetails(request)}
-            style={styles.requestTouchable}
-          >
-            <Card style={styles.requestCard}>
-              <Card.Content>
-                <View style={styles.cardHeader}>
-                  <Title style={styles.requestTitle}>{request.title}</Title>
-                  <Chip
-                    mode="outlined"
-                    textStyle={{ color: getStatusColor(request.status) }}
-                    style={styles.statusChip}
-                  >
-                    {request.status.replace('_', ' ').toUpperCase()}
-                  </Chip>
-                </View>
-
-                <Text style={styles.description}>{request.description}</Text>
-
-                <View style={styles.requestInfo}>
-                  <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="office-building" size={16} color="#666" />
-                    <Text style={styles.infoText}>
-                      {request.premises_name} {request.unit_number && `- Unit ${request.unit_number}`}
+        {/* Pending Requests */}
+        {pendingRequests.length > 0 && (
+          <View style={styles.section}>
+            <Title style={styles.sectionTitle}>
+              Pending Approval ({pendingRequests.length})
+            </Title>
+            {pendingRequests.map((request) => (
+              <Card key={request.id} style={styles.requestCard}>
+                <Card.Content>
+                  <View style={styles.requestHeader}>
+                    <MaterialIcons 
+                      name={getRequestTypeIcon(request.request_type)} 
+                      size={24} 
+                      color={getStatusColor(request.status)} 
+                    />
+                    <View style={styles.requestTitleContainer}>
+                      <Title style={styles.requestTitle}>{request.title}</Title>
+                      <Chip 
+                        mode="outlined" 
+                        textStyle={{ color: getPriorityColor(request.priority) }}
+                        style={{ borderColor: getPriorityColor(request.priority) }}
+                      >
+                        {request.priority}
+                      </Chip>
+                    </View>
+                  </View>
+                  <Paragraph style={styles.requestDescription}>
+                    {request.description}
+                  </Paragraph>
+                  <View style={styles.requestDetails}>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Property:</Text> {request.premises_name} - Unit {request.unit_number}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Estimated Cost:</Text> ${request.estimated_cost}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Requested:</Text> {new Date(request.requested_date).toLocaleDateString()}
                     </Text>
                   </View>
-                  
-                  <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="map-marker" size={16} color="#666" />
-                    <Text style={styles.infoText}>{request.premises_address}</Text>
+                  <View style={styles.statusProgress}>
+                    <Text style={styles.progressLabel}>Status Progress</Text>
+                    <ProgressBar 
+                      progress={getStatusProgress(request)} 
+                      color={getStatusColor(request.status)}
+                      style={styles.progressBar}
+                    />
+                    <Text style={styles.progressText}>
+                      {request.status.replace('_', ' ').toUpperCase()}
+                    </Text>
                   </View>
-                </View>
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
+        )}
 
-                <View style={styles.tagsContainer}>
-                  <Chip
-                    mode="outlined"
-                    textStyle={{ color: getPriorityColor(request.priority) }}
-                    style={styles.tagChip}
-                  >
-                    {request.priority.toUpperCase()}
-                  </Chip>
+        {/* Active Requests */}
+        {activeRequests.length > 0 && (
+          <View style={styles.section}>
+            <Title style={styles.sectionTitle}>
+              Active Requests ({activeRequests.length})
+            </Title>
+            {activeRequests.map((request) => (
+              <Card key={request.id} style={styles.requestCard}>
+                <Card.Content>
+                  <View style={styles.requestHeader}>
+                    <MaterialIcons 
+                      name={getRequestTypeIcon(request.request_type)} 
+                      size={24} 
+                      color={getStatusColor(request.status)} 
+                    />
+                    <View style={styles.requestTitleContainer}>
+                      <Title style={styles.requestTitle}>{request.title}</Title>
+                      <Chip 
+                        mode="outlined" 
+                        textStyle={{ color: getStatusColor(request.status) }}
+                        style={{ borderColor: getStatusColor(request.status) }}
+                      >
+                        {request.status}
+                      </Chip>
+                    </View>
+                  </View>
+                  <Paragraph style={styles.requestDescription}>
+                    {request.description}
+                  </Paragraph>
                   
-                  <Chip
-                    mode="outlined"
-                    style={styles.tagChip}
-                  >
-                    {request.request_type.replace('_', ' ').toUpperCase()}
-                  </Chip>
+                  {request.work_order_number && (
+                    <View style={styles.workOrderInfo}>
+                      <Text style={styles.workOrderTitle}>Work Order Details</Text>
+                      <View style={styles.workOrderDetails}>
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Work Order:</Text> {request.work_order_number}
+                        </Text>
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Assigned To:</Text> {request.workman_first_name} {request.workman_last_name}
+                        </Text>
+                        {request.work_order_description && (
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>Work Description:</Text> {request.work_order_description}
+                          </Text>
+                        )}
+                        {request.estimated_hours && (
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>Estimated Hours:</Text> {request.estimated_hours}h
+                          </Text>
+                        )}
+                        {request.actual_hours && (
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>Actual Hours:</Text> {request.actual_hours}h
+                          </Text>
+                        )}
+                      </View>
+                      {request.work_order_notes && (
+                        <View style={styles.workOrderNotes}>
+                          <Text style={styles.notesLabel}>Workman Notes:</Text>
+                          <Text style={styles.notesText}>{request.work_order_notes}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
 
-                  {request.estimated_cost && (
-                    <Chip mode="outlined" style={styles.tagChip}>
-                      ${request.estimated_cost}
-                    </Chip>
-                  )}
-                </View>
-
-                <View style={styles.timeline}>
-                  <Text style={styles.timelineLabel}>Requested: {formatDate(request.requested_date)}</Text>
-                  
-                  {request.approved_date && (
-                    <Text style={styles.timelineLabel}>Approved: {formatDate(request.approved_date)}</Text>
-                  )}
-                  
-                  {request.assigned_date && (
-                    <Text style={styles.timelineLabel}>Assigned: {formatDate(request.assigned_date)}</Text>
-                  )}
-                  
-                  {request.started_date && (
-                    <Text style={styles.timelineLabel}>Started: {formatDate(request.started_date)}</Text>
-                  )}
-                  
-                  {request.completed_date && (
-                    <Text style={styles.timelineLabel}>Completed: {formatDate(request.completed_date)}</Text>
-                  )}
-                </View>
-
-                {request.work_order_number && (
-                  <View style={styles.workOrderInfo}>
-                    <Text style={styles.workOrderLabel}>Work Order: {request.work_order_number}</Text>
-                    {request.workman_first_name && (
-                      <Text style={styles.workmanInfo}>
-                        Assigned to: {request.workman_first_name} {request.workman_last_name}
+                  <View style={styles.requestDetails}>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Property:</Text> {request.premises_name} - Unit {request.unit_number}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Estimated Cost:</Text> ${request.estimated_cost}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Requested:</Text> {new Date(request.requested_date).toLocaleDateString()}
+                    </Text>
+                    {request.approved_date && (
+                      <Text style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Approved:</Text> {new Date(request.approved_date).toLocaleDateString()}
+                      </Text>
+                    )}
+                    {request.assigned_date && (
+                      <Text style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Assigned:</Text> {new Date(request.assigned_date).toLocaleDateString()}
+                      </Text>
+                    )}
+                    {request.started_date && (
+                      <Text style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Started:</Text> {new Date(request.started_date).toLocaleDateString()}
                       </Text>
                     )}
                   </View>
-                )}
 
-                {request.status === 'completed' && !request.tenant_rating && (
-                  <Button
-                    mode="outlined"
-                    onPress={() => openRatingModal(request)}
-                    style={styles.rateButton}
-                    icon="star"
-                  >
-                    Rate This Request
-                  </Button>
-                )}
+                  <View style={styles.statusProgress}>
+                    <Text style={styles.progressLabel}>Status Progress</Text>
+                    <ProgressBar 
+                      progress={getStatusProgress(request)} 
+                      color={getStatusColor(request.status)}
+                      style={styles.progressBar}
+                    />
+                    <Text style={styles.progressText}>
+                      {request.status.replace('_', ' ').toUpperCase()}
+                    </Text>
+                  </View>
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
+        )}
 
-                {request.tenant_rating && (
-                  <View style={styles.ratingContainer}>
-                    <Text style={styles.ratingLabel}>Your Rating:</Text>
-                    <View style={styles.stars}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <MaterialCommunityIcons
-                          key={star}
-                          name={star <= request.tenant_rating! ? 'star' : 'star-outline'}
-                          size={20}
-                          color="#ffd700"
-                        />
-                      ))}
+        {/* Completed Requests */}
+        {completedRequests.length > 0 && (
+          <View style={styles.section}>
+            <Title style={styles.sectionTitle}>
+              Completed Requests ({completedRequests.length})
+            </Title>
+            {completedRequests.map((request) => (
+              <Card key={request.id} style={styles.requestCard}>
+                <Card.Content>
+                  <View style={styles.requestHeader}>
+                    <MaterialIcons 
+                      name={getRequestTypeIcon(request.request_type)} 
+                      size={24} 
+                      color={getStatusColor(request.status)} 
+                    />
+                    <View style={styles.requestTitleContainer}>
+                      <Title style={styles.requestTitle}>{request.title}</Title>
+                      <Chip 
+                        mode="outlined" 
+                        textStyle={{ color: getStatusColor(request.status) }}
+                        style={{ borderColor: getStatusColor(request.status) }}
+                      >
+                        {request.status}
+                      </Chip>
                     </View>
-                    {request.tenant_feedback && (
-                      <Text style={styles.feedback}>{request.tenant_feedback}</Text>
+                  </View>
+                  <Paragraph style={styles.requestDescription}>
+                    {request.description}
+                  </Paragraph>
+                  
+                  {request.work_order_number && (
+                    <View style={styles.workOrderInfo}>
+                      <Text style={styles.workOrderTitle}>Work Order Details</Text>
+                      <View style={styles.workOrderDetails}>
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Work Order:</Text> {request.work_order_number}
+                        </Text>
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Completed By:</Text> {request.workman_first_name} {request.workman_last_name}
+                        </Text>
+                        {request.work_order_description && (
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>Work Description:</Text> {request.work_order_description}
+                          </Text>
+                        )}
+                        {request.estimated_hours && request.actual_hours && (
+                          <Text style={styles.detailText}>
+                            <Text style={styles.detailLabel}>Time:</Text> {request.actual_hours}h actual vs {request.estimated_hours}h estimated
+                          </Text>
+                        )}
+                      </View>
+                      {request.work_order_notes && (
+                        <View style={styles.workOrderNotes}>
+                          <Text style={styles.notesLabel}>Completion Notes:</Text>
+                          <Text style={styles.notesText}>{request.work_order_notes}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  <View style={styles.requestDetails}>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Property:</Text> {request.premises_name} - Unit {request.unit_number}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Estimated Cost:</Text> ${request.estimated_cost}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      <Text style={styles.detailLabel}>Requested:</Text> {new Date(request.requested_date).toLocaleDateString()}
+                    </Text>
+                    {request.completed_date && (
+                      <Text style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Completed:</Text> {new Date(request.completed_date).toLocaleDateString()}
+                      </Text>
                     )}
                   </View>
-                )}
-              </Card.Content>
-            </Card>
-          </TouchableOpacity>
-        ))}
 
-        {filteredRequests.length === 0 && !isLoading && (
-          <Surface style={styles.emptyState}>
-            <MaterialCommunityIcons name="wrench" size={64} color="#ccc" />
-            <Title style={styles.emptyTitle}>No Maintenance Requests</Title>
-            <Text style={styles.emptyText}>
-              {searchQuery || statusFilter !== 'all' 
-                ? 'No requests match your current filters.' 
-                : 'You haven\'t submitted any maintenance requests yet.'}
-            </Text>
-          </Surface>
+                  <View style={styles.statusProgress}>
+                    <Text style={styles.progressLabel}>Status Progress</Text>
+                    <ProgressBar 
+                      progress={getStatusProgress(request)} 
+                      color={getStatusColor(request.status)}
+                      style={styles.progressBar}
+                    />
+                    <Text style={styles.progressText}>
+                      {request.status.replace('_', ' ').toUpperCase()}
+                    </Text>
+                  </View>
+
+                  {!request.tenant_rating && (
+                    <Button
+                      mode="contained"
+                      onPress={() => {
+                        setSelectedRequest(request);
+                        setRatingModalVisible(true);
+                      }}
+                      style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
+                      icon="star"
+                    >
+                      Rate This Request
+                    </Button>
+                  )}
+
+                  {request.tenant_rating && (
+                    <View style={styles.ratingContainer}>
+                      <Text style={styles.detailLabel}>Your Rating:</Text>
+                      <View style={styles.ratingStars}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <MaterialIcons
+                            key={star}
+                            name={star <= request.tenant_rating! ? 'star' : 'star-border'}
+                            size={20}
+                            color="#FFD700"
+                          />
+                        ))}
+                      </View>
+                      {request.tenant_feedback && (
+                        <Text style={styles.feedbackText}>"{request.tenant_feedback}"</Text>
+                      )}
+                    </View>
+                  )}
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
+        )}
+
+        {filteredRequests.length === 0 && (
+          <Card style={styles.emptyCard}>
+            <Card.Content style={styles.emptyContent}>
+              <MaterialIcons name="build" size={64} color="#ccc" />
+              <Title style={styles.emptyTitle}>No Maintenance Requests</Title>
+              <Text style={styles.emptyText}>
+                {filterStatus === 'all' && filterType === 'all'
+                  ? 'You don\'t have any maintenance requests yet.'
+                  : `No maintenance requests match your current filters.`}
+              </Text>
+            </Card.Content>
+          </Card>
         )}
       </ScrollView>
 
-      {/* Create Request Modal */}
+      {/* New Request Modal */}
       <Portal>
         <Modal
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={styles.modal}
+          visible={newRequestModalVisible}
+          onDismiss={() => setNewRequestModalVisible(false)}
+          contentContainerStyle={styles.modalContainer}
         >
-          <ScrollView>
-            <Title style={styles.modalTitle}>Submit Maintenance Request</Title>
+          <Title style={styles.modalTitle}>Create Maintenance Request</Title>
+          
+          <TextInput
+            label="Title *"
+            value={newRequest.title}
+            onChangeText={(text) => setNewRequest(prev => ({ ...prev, title: text }))}
+            mode="outlined"
+            style={styles.modalInput}
+            placeholder="Brief description of the issue"
+          />
 
-            <TextInput
-              label="Title *"
-              value={newRequest.title}
-              onChangeText={(text) => setNewRequest(prev => ({ ...prev, title: text }))}
+          <TextInput
+            label="Description *"
+            value={newRequest.description}
+            onChangeText={(text) => setNewRequest(prev => ({ ...prev, description: text }))}
+            mode="outlined"
+            multiline
+            numberOfLines={4}
+            style={styles.modalInput}
+            placeholder="Detailed description of the problem..."
+          />
+
+          <Text style={styles.modalSectionTitle}>Request Type</Text>
+          <SegmentedButtons
+            value={newRequest.request_type}
+            onValueChange={(value) => setNewRequest(prev => ({ ...prev, request_type: value as MaintenanceRequest['request_type'] }))}
+            buttons={[
+              { value: 'routine', label: 'Routine' },
+              { value: 'urgent', label: 'Urgent' },
+              { value: 'emergency', label: 'Emergency' },
+            ]}
+            style={styles.modalSegmentedButtons}
+          />
+
+          <Text style={styles.modalSectionTitle}>Priority Level</Text>
+          <SegmentedButtons
+            value={newRequest.priority}
+            onValueChange={(value) => setNewRequest(prev => ({ ...prev, priority: value as MaintenanceRequest['priority'] }))}
+            buttons={[
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]}
+            style={styles.modalSegmentedButtons}
+          />
+
+          <View style={styles.modalButtons}>
+            <Button
               mode="outlined"
-              style={styles.input}
-            />
-
-            <TextInput
-              label="Description *"
-              value={newRequest.description}
-              onChangeText={(text) => setNewRequest(prev => ({ ...prev, description: text }))}
-              mode="outlined"
-              style={styles.input}
-              multiline
-              numberOfLines={4}
-            />
-
-            <Text style={styles.sectionTitle}>Request Type</Text>
-            <SegmentedButtons
-              value={newRequest.request_type}
-              onValueChange={(value) => setNewRequest(prev => ({ ...prev, request_type: value }))}
-              buttons={requestTypes.map(type => ({ value: type.value, label: type.label }))}
-              style={styles.segmentedButtons}
-            />
-
-            <Text style={styles.sectionTitle}>Priority Level</Text>
-            <SegmentedButtons
-              value={newRequest.priority}
-              onValueChange={(value) => setNewRequest(prev => ({ ...prev, priority: value }))}
-              buttons={priorities.map(priority => ({ value: priority.value, label: priority.label }))}
-              style={styles.segmentedButtons}
-            />
-
-            <TextInput
-              label="Estimated Cost (Optional)"
-              value={newRequest.estimated_cost}
-              onChangeText={(text) => setNewRequest(prev => ({ ...prev, estimated_cost: text }))}
-              mode="outlined"
-              style={styles.input}
-              keyboardType="numeric"
-              placeholder="0.00"
-            />
-
-            <View style={styles.modalActions}>
-              <Button
-                mode="outlined"
-                onPress={() => setModalVisible(false)}
-                style={styles.modalButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleCreateRequest}
-                style={styles.modalButton}
-                loading={isLoading}
-                disabled={isLoading || !newRequest.title.trim() || !newRequest.description.trim()}
-              >
-                Submit Request
-              </Button>
-            </View>
-          </ScrollView>
+              onPress={() => setNewRequestModalVisible(false)}
+              style={styles.modalButton}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreateRequest}
+              style={styles.modalButton}
+            >
+              Submit Request
+            </Button>
+          </View>
         </Modal>
       </Portal>
 
@@ -552,27 +735,34 @@ const MaintenanceRequestsScreen: React.FC = () => {
         <Modal
           visible={ratingModalVisible}
           onDismiss={() => setRatingModalVisible(false)}
-          contentContainerStyle={styles.modal}
+          contentContainerStyle={styles.modalContainer}
         >
-          <Title style={styles.modalTitle}>Rate Maintenance Request</Title>
+          <Title style={styles.modalTitle}>Rate This Request</Title>
           
-          <Text style={styles.ratingQuestion}>
-            How would you rate the quality of this maintenance work?
-          </Text>
+          {selectedRequest && (
+            <View style={styles.selectedRequestInfo}>
+              <Text style={styles.selectedRequestTitle}>
+                {selectedRequest.title}
+              </Text>
+              <Text style={styles.selectedRequestNumber}>
+                {selectedRequest.work_order_number}
+              </Text>
+            </View>
+          )}
 
-          <View style={styles.starsContainer}>
+          <Text style={styles.modalSectionTitle}>How would you rate the work?</Text>
+          <View style={styles.ratingInputContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
-              <MaterialCommunityIcons
+              <MaterialIcons
                 key={star}
-                name={star <= ratingData.rating ? 'star' : 'star-outline'}
-                size={40}
-                color="#ffd700"
+                name={star <= ratingData.rating ? 'star' : 'star-border'}
+                size={32}
+                color="#FFD700"
                 onPress={() => setRatingData(prev => ({ ...prev, rating: star }))}
-                style={styles.starButton}
+                style={styles.ratingStar}
               />
             ))}
           </View>
-
           <Text style={styles.ratingText}>{ratingData.rating} out of 5 stars</Text>
 
           <TextInput
@@ -580,13 +770,13 @@ const MaintenanceRequestsScreen: React.FC = () => {
             value={ratingData.feedback}
             onChangeText={(text) => setRatingData(prev => ({ ...prev, feedback: text }))}
             mode="outlined"
-            style={styles.input}
             multiline
             numberOfLines={3}
-            placeholder="Tell us about your experience..."
+            style={styles.modalInput}
+            placeholder="Share your experience or suggestions..."
           />
 
-          <View style={styles.modalActions}>
+          <View style={styles.modalButtons}>
             <Button
               mode="outlined"
               onPress={() => setRatingModalVisible(false)}
@@ -598,8 +788,6 @@ const MaintenanceRequestsScreen: React.FC = () => {
               mode="contained"
               onPress={handleRateRequest}
               style={styles.modalButton}
-              loading={isLoading}
-              disabled={isLoading}
             >
               Submit Rating
             </Button>
@@ -607,10 +795,12 @@ const MaintenanceRequestsScreen: React.FC = () => {
         </Modal>
       </Portal>
 
+      {/* FAB for creating new requests */}
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => setModalVisible(true)}
+        onPress={() => setNewRequestModalVisible(true)}
+        label="New Request"
       />
     </View>
   );
@@ -621,206 +811,214 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  scrollView: {
-    flex: 1,
+  filterCard: {
+    margin: 16,
+    elevation: 2,
   },
-  header: {
-    padding: 24,
+  section: {
+    marginHorizontal: 16,
     marginBottom: 16,
-    alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  searchBar: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  statusFilter: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  requestTouchable: {
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 12,
+    color: '#333',
   },
   requestCard: {
-    marginBottom: 8,
+    marginBottom: 12,
+    elevation: 2,
   },
-  cardHeader: {
+  requestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  requestTitleContainer: {
+    flex: 1,
+    marginLeft: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
   },
   requestTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
     flex: 1,
-    marginRight: 12,
   },
-  statusChip: {
-    alignSelf: 'flex-start',
+  requestDescription: {
+    marginBottom: 12,
+    color: '#666',
   },
-  description: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginBottom: 16,
-    lineHeight: 20,
+  requestDetails: {
+    marginBottom: 12,
   },
-  requestInfo: {
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    marginLeft: 8,
-    opacity: 0.7,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  tagChip: {
-    marginRight: 8,
+  detailText: {
     marginBottom: 4,
+    fontSize: 14,
+    color: '#555',
   },
-  timeline: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-  },
-  timelineLabel: {
-    fontSize: 12,
-    opacity: 0.7,
-    marginBottom: 4,
+  detailLabel: {
+    fontWeight: 'bold',
+    color: '#333',
   },
   workOrderInfo: {
     marginBottom: 16,
     padding: 12,
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#f0f8ff',
     borderRadius: 8,
   },
-  workOrderLabel: {
+  workOrderTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#1976d2',
+  },
+  workOrderDetails: {
+    marginBottom: 8,
+  },
+  workOrderNotes: {
+    padding: 8,
+    backgroundColor: '#fff3e0',
+    borderRadius: 6,
+  },
+  notesLabel: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#e65100',
   },
-  workmanInfo: {
-    fontSize: 12,
-    opacity: 0.8,
+  notesText: {
+    fontSize: 14,
+    color: '#e65100',
   },
-  rateButton: {
+  statusProgress: {
     marginBottom: 16,
   },
-  ratingContainer: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: '#f3e5f5',
-    borderRadius: 8,
-  },
-  ratingLabel: {
+  progressLabel: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#333',
   },
-  stars: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 4,
   },
-  feedback: {
+  progressText: {
     fontSize: 12,
-    fontStyle: 'italic',
-    opacity: 0.8,
+    color: '#666',
+    textAlign: 'center',
   },
-  emptyState: {
-    margin: 32,
-    padding: 32,
-    alignItems: 'center',
+  ratingContainer: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#f9f9f9',
     borderRadius: 8,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  feedbackText: {
+    marginTop: 8,
+    fontStyle: 'italic',
+    color: '#666',
+  },
+  actionButton: {
+    marginTop: 8,
+  },
+  segmentedButtons: {
+    marginBottom: 12,
+  },
+  emptyCard: {
+    margin: 16,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    padding: 32,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 16,
     marginBottom: 8,
+    color: '#666',
   },
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
-    opacity: 0.7,
+    color: '#999',
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#6200ee',
   },
-  modal: {
+  modalContainer: {
     backgroundColor: 'white',
+    padding: 20,
     margin: 20,
     borderRadius: 8,
     maxHeight: '90%',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
   },
-  input: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
+  modalSectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 8,
+    marginTop: 16,
+    color: '#333',
+  },
+  modalInput: {
     marginBottom: 12,
   },
-  segmentedButtons: {
+  modalSegmentedButtons: {
     marginBottom: 16,
   },
-  modalActions: {
+  modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     marginTop: 16,
   },
   modalButton: {
     flex: 1,
     marginHorizontal: 8,
   },
-  ratingQuestion: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
+  selectedRequestInfo: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
   },
-  starsContainer: {
+  selectedRequestTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: '#333',
+  },
+  selectedRequestNumber: {
+    fontSize: 14,
+    color: '#666',
+  },
+  ratingInputContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  starButton: {
-    marginHorizontal: 8,
+  ratingStar: {
+    marginHorizontal: 4,
   },
   ratingText: {
-    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    fontSize: 16,
     fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
   },
 });
 
