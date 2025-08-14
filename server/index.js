@@ -634,6 +634,314 @@ app.put('/api/organizations/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Messaging endpoints
+app.get('/api/conversations', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Get all conversations where user is a participant
+    const conversations = await pool.query(`
+      SELECT 
+        c.id, c.conversation_type, c.title, c.created_at, c.updated_at,
+        COUNT(m.id) as message_count,
+        MAX(m.created_at) as last_message_at,
+        CASE 
+          WHEN MAX(m.created_at) IS NOT NULL THEN (
+            SELECT content FROM messages 
+            WHERE conversation_id = c.id 
+            ORDER BY created_at DESC 
+            LIMIT 1
+          )
+          ELSE NULL
+        END as last_message_content,
+        CASE 
+          WHEN MAX(m.created_at) IS NOT NULL THEN (
+            SELECT first_name FROM users 
+            WHERE id = (
+              SELECT sender_id FROM messages 
+              WHERE conversation_id = c.id 
+              ORDER BY created_at DESC 
+              LIMIT 1
+            )
+          )
+          ELSE NULL
+        END as last_message_sender
+      FROM conversations c
+      INNER JOIN conversation_participants cp ON c.id = cp.conversation_id
+      LEFT JOIN messages m ON c.id = m.conversation_id
+      WHERE cp.user_id = $1 AND cp.is_active = true
+      GROUP BY c.id, c.conversation_type, c.title, c.created_at, c.updated_at
+      ORDER BY c.updated_at DESC
+    `, [userId]);
+
+    res.json({
+      status: 200,
+      conversations: conversations.rows
+    });
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.post('/api/conversations', authenticateToken, [
+  body('conversation_type').isIn(['general', 'lease_related', 'maintenance', 'payment']),
+  body('title').notEmpty().trim(),
+  body('participant_ids').isArray({ min: 1 }),
+  body('initial_message').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { conversation_type, title, participant_ids, initial_message } = req.body;
+    const userId = req.user.userId;
+
+    // Check if user is authorized to create conversations
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'User not found'
+      });
+    }
+
+    // Create conversation
+    const conversation = await pool.query(`
+      INSERT INTO conversations (conversation_type, title, created_at, updated_at)
+      VALUES ($1, $2, NOW(), NOW())
+      RETURNING *
+    `, [conversation_type, title]);
+
+    const conversationId = conversation.rows[0].id;
+
+    // Add participants (including the creator)
+    const allParticipantIds = [...new Set([userId, ...participant_ids])];
+    
+    for (const participantId of allParticipantIds) {
+      // Get user type for role
+      const participantUser = await pool.query(`
+        SELECT user_type FROM users WHERE id = $1
+      `, [participantId]);
+
+      if (participantUser.rows.length > 0) {
+        await pool.query(`
+          INSERT INTO conversation_participants (conversation_id, user_id, role, created_at)
+          VALUES ($1, $2, $3, NOW())
+        `, [conversationId, participantId, participantUser.rows[0].user_type]);
+      }
+    }
+
+    // Add initial message if provided
+    if (initial_message) {
+      await pool.query(`
+        INSERT INTO messages (conversation_id, sender_id, message_type, content, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+      `, [conversationId, userId, 'text', initial_message]);
+    }
+
+    res.status(201).json({
+      status: 201,
+      message: 'Conversation created successfully',
+      conversation: {
+        ...conversation.rows[0],
+        participant_count: allParticipantIds.length
+      }
+    });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/conversations/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Check if user is a participant in this conversation
+    const participantCheck = await pool.query(`
+      SELECT cp.*, c.* FROM conversation_participants cp
+      INNER JOIN conversations c ON cp.conversation_id = c.id
+      WHERE cp.conversation_id = $1 AND cp.user_id = $2 AND cp.is_active = true
+    `, [id, userId]);
+
+    if (participantCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied. You are not a participant in this conversation.'
+      });
+    }
+
+    // Get conversation details with participants
+    const participants = await pool.query(`
+      SELECT cp.*, u.first_name, u.last_name, u.email, u.user_type
+      FROM conversation_participants cp
+      INNER JOIN users u ON cp.user_id = u.id
+      WHERE cp.conversation_id = $1 AND cp.is_active = true
+      ORDER BY cp.joined_at
+    `, [id]);
+
+    res.json({
+      status: 200,
+      conversation: participantCheck.rows[0],
+      participants: participants.rows
+    });
+  } catch (error) {
+    console.error('Error fetching conversation:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/conversations/:id/messages', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+    const userId = req.user.userId;
+    const offset = (page - 1) * limit;
+
+    // Check if user is a participant in this conversation
+    const participantCheck = await pool.query(`
+      SELECT id FROM conversation_participants 
+      WHERE conversation_id = $1 AND user_id = $2 AND is_active = true
+    `, [id, userId]);
+
+    if (participantCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied. You are not a participant in this conversation.'
+      });
+    }
+
+    // Get messages
+    const messages = await pool.query(`
+      SELECT m.*, u.first_name, u.last_name, u.user_type
+      FROM messages m
+      INNER JOIN users u ON m.sender_id = u.id
+      WHERE m.conversation_id = $1
+      ORDER BY m.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [id, limit, offset]);
+
+    // Get total message count
+    const totalCount = await pool.query(`
+      SELECT COUNT(*) FROM messages WHERE conversation_id = $1
+    `, [id]);
+
+    // Mark messages as read for this user
+    await pool.query(`
+      UPDATE messages 
+      SET is_read = true 
+      WHERE conversation_id = $1 AND sender_id != $2 AND is_read = false
+    `, [id, userId]);
+
+    res.json({
+      status: 200,
+      messages: messages.rows.reverse(), // Show oldest first
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.post('/api/conversations/:id/messages', authenticateToken, [
+  body('content').notEmpty().trim(),
+  body('message_type').optional().isIn(['text', 'image', 'document', 'system']),
+  body('attachment_url').optional().isURL()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { content, message_type = 'text', attachment_url } = req.body;
+    const userId = req.user.userId;
+
+    // Check if user is a participant in this conversation
+    const participantCheck = await pool.query(`
+      SELECT id FROM conversation_participants 
+      WHERE conversation_id = $1 AND user_id = $2 AND is_active = true
+    `, [id, userId]);
+
+    if (participantCheck.rows.length === 0) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied. You are not a participant in this conversation.'
+      });
+    }
+
+    // Create message
+    const message = await pool.query(`
+      INSERT INTO messages (conversation_id, sender_id, message_type, content, attachment_url, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING *
+    `, [id, userId, message_type, content, attachment_url]);
+
+    // Update conversation timestamp
+    await pool.query(`
+      UPDATE conversations 
+      SET updated_at = NOW() 
+      WHERE id = $1
+    `, [id]);
+
+    // Get sender info
+    const sender = await pool.query(`
+      SELECT first_name, last_name, user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    res.status(201).json({
+      status: 201,
+      message: 'Message sent successfully',
+      message: {
+        ...message.rows[0],
+        sender_first_name: sender.rows[0].first_name,
+        sender_last_name: sender.rows[0].last_name,
+        sender_user_type: sender.rows[0].user_type
+      }
+    });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

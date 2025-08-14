@@ -15,6 +15,8 @@ import MyLeasesScreen from '../screens/MyLeasesScreen';
 import RentPaymentsScreen from '../screens/RentPaymentsScreen';
 import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
 import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
+import ConversationsScreen from '../screens/ConversationsScreen';
+import ChatScreen from '../screens/ChatScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -43,16 +45,16 @@ const MainTabNavigator = () => (
       component={HomeScreen}
       options={{ title: 'Dashboard' }}
     />
-    <Tab.Screen 
-      name="Search" 
-      component={HomeScreen}
-      options={{ title: 'Search' }}
-    />
-    <Tab.Screen 
-      name="Favorites" 
-      component={HomeScreen}
-      options={{ title: 'Favorites' }}
-    />
+                    <Tab.Screen
+                  name="Messages"
+                  component={ConversationsScreen}
+                  options={{ title: 'Messages' }}
+                />
+                <Tab.Screen
+                  name="Search"
+                  component={HomeScreen}
+                  options={{ title: 'Search' }}
+                />
     <Tab.Screen 
       name="Profile" 
       component={ProfileScreen}
@@ -114,6 +116,18 @@ const AppNavigator: React.FC = () => {
             name="OrganizationManagement" 
             component={OrganizationManagementScreen}
             options={{ title: 'Organization Management' }}
+          />
+          
+          <Stack.Screen 
+            name="Conversations" 
+            component={ConversationsScreen}
+            options={{ title: 'Messages' }}
+          />
+          
+          <Stack.Screen 
+            name="Chat" 
+            component={ChatScreen}
+            options={{ title: 'Chat' }}
           />
           
           {/* Tenant Screens */}

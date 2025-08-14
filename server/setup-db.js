@@ -228,6 +228,75 @@ async function setupDatabase() {
     `);
     console.log('✓ Rental listings featured index created');
 
+    // Create conversations table for chat functionality
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id SERIAL PRIMARY KEY,
+        conversation_type VARCHAR(20) NOT NULL CHECK (conversation_type IN ('general', 'lease_related', 'maintenance', 'payment')),
+        title VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Conversations table created');
+
+    // Create conversation_participants table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS conversation_participants (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(20) NOT NULL CHECK (role IN ('landlord', 'tenant', 'admin')),
+        is_active BOOLEAN DEFAULT TRUE,
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(conversation_id, user_id)
+      )
+    `);
+    console.log('✓ Conversation participants table created');
+
+    // Create messages table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'document', 'system')),
+        content TEXT NOT NULL,
+        attachment_url TEXT,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Messages table created');
+
+    // Create indexes for messaging
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id)
+    `);
+    console.log('✓ Conversation participants index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_conversation_participants_user ON conversation_participants(user_id)
+    `);
+    console.log('✓ Conversation participants user index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id)
+    `);
+    console.log('✓ Messages conversation index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)
+    `);
+    console.log('✓ Messages sender index created');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)
+    `);
+    console.log('✓ Messages created index created');
+
     client.release();
     console.log('\n🎉 Rently Database setup completed successfully!');
     console.log('\nYou can now:');

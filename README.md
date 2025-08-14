@@ -74,7 +74,7 @@ node server/setup-db.js
 ```
 
 #### Option B: Manual setup
-1. Create a PostgreSQL database named `rental_app`
+1. Create a PostgreSQL database named `rently`
 2. Update the `.env` file with your database credentials
 3. The tables will be created automatically when you start the server
 
@@ -84,7 +84,7 @@ Create a `.env` file in the root directory:
 # Database Configuration
 DB_USER=postgres
 DB_HOST=localhost
-DB_NAME=rental_app
+DB_NAME=rently
 DB_PASSWORD=your_password_here
 DB_PORT=5432
 
@@ -351,7 +351,7 @@ If you encounter "Network request failed" errors:
 1. **Database Connection Error**
    - Verify PostgreSQL is running
    - Check database credentials in `.env`
-   - Ensure database `rental_app` exists
+   - Ensure database `rently` exists
 
 2. **Port Already in Use**
    - Change the port in `.env` file

@@ -331,6 +331,70 @@ const fakeLeases = [
   }
 ];
 
+const fakeConversations = [
+  {
+    conversation_type: 'lease_related',
+    title: 'Lease Discussion - Unit A101',
+  },
+  {
+    conversation_type: 'maintenance',
+    title: 'Maintenance Request - Leaky Faucet',
+  },
+  {
+    conversation_type: 'payment',
+    title: 'Rent Payment Discussion',
+  },
+  {
+    conversation_type: 'general',
+    title: 'General Property Questions',
+  }
+];
+
+const fakeMessages = [
+  {
+    conversation_id: 1,
+    sender_id: 1, // John Doe (tenant)
+    message_type: 'text',
+    content: 'Hi, I have a question about the lease renewal. When does my current lease expire?',
+  },
+  {
+    conversation_id: 1,
+    sender_id: 2, // Jane Smith (landlord)
+    message_type: 'text',
+    content: 'Hi John! Your lease expires on December 31st, 2024. Would you like to discuss renewal options?',
+  },
+  {
+    conversation_id: 1,
+    sender_id: 1,
+    message_type: 'text',
+    content: 'Yes, I would like to renew. Can we discuss the terms and any potential rent increase?',
+  },
+  {
+    conversation_id: 2,
+    sender_id: 1,
+    message_type: 'text',
+    content: 'I reported a leaky faucet in the kitchen. Has the maintenance team been notified?',
+  },
+  {
+    conversation_id: 2,
+    sender_id: 2,
+    message_type: 'text',
+    content: 'Yes, I\'ve notified the maintenance team. They should be there tomorrow between 9 AM and 12 PM. Please ensure someone is available to let them in.',
+  },
+  {
+    conversation_id: 3,
+    sender_id: 1,
+    message_type: 'text',
+    content: 'I\'m having trouble with the online rent payment system. Can you help?',
+  },
+  {
+    conversation_id: 3,
+    sender_id: 2,
+    message_type: 'text',
+    content: 'Of course! What specific issue are you encountering? I can walk you through the process.',
+  }
+];
+
 const fakeRentalListings = [
   {
     rental_unit_id: 2,
@@ -538,6 +602,72 @@ async function seedDatabase() {
       console.log(`✅ Created lease for unit ${lease.rental_unit_id}`);
     }
 
+    // Insert fake conversations
+    console.log('\n💬 Creating conversations...');
+    const conversationIds = [];
+    for (const conversation of fakeConversations) {
+      const query = `
+        INSERT INTO conversations (conversation_type, title, created_at, updated_at)
+        VALUES ($1, $2, NOW(), NOW())
+        RETURNING id, title
+      `;
+      
+      const values = [conversation.conversation_type, conversation.title];
+      
+      const result = await pool.query(query, values);
+      conversationIds.push(result.rows[0].id);
+      console.log(`✅ Created conversation: ${result.rows[0].title}`);
+    }
+
+    // Insert conversation participants
+    console.log('\n👥 Adding conversation participants...');
+    
+    // Conversation 1: Lease Discussion (John Doe + Jane Smith)
+    await pool.query(`
+      INSERT INTO conversation_participants (conversation_id, user_id, role, created_at)
+      VALUES ($1, $2, $3, NOW()), ($1, $4, $5, NOW())
+    `, [conversationIds[0], 1, 'tenant', 2, 'landlord']);
+    
+    // Conversation 2: Maintenance (John Doe + Jane Smith)
+    await pool.query(`
+      INSERT INTO conversation_participants (conversation_id, user_id, role, created_at)
+      VALUES ($1, $2, $3, NOW()), ($1, $4, $5, NOW())
+    `, [conversationIds[1], 1, 'tenant', 2, 'landlord']);
+    
+    // Conversation 3: Payment (John Doe + Jane Smith)
+    await pool.query(`
+      INSERT INTO conversation_participants (conversation_id, user_id, role, created_at)
+      VALUES ($1, $2, $3, NOW()), ($1, $4, $5, NOW())
+    `, [conversationIds[2], 1, 'tenant', 2, 'landlord']);
+    
+    // Conversation 4: General (Mike Johnson + Sarah Wilson)
+    await pool.query(`
+      INSERT INTO conversation_participants (conversation_id, user_id, role, created_at)
+      VALUES ($1, $2, $3, NOW()), ($1, $4, $5, NOW())
+    `, [conversationIds[3], 3, 'tenant', 4, 'landlord']);
+    
+    console.log('✅ Added conversation participants');
+
+    // Insert fake messages
+    console.log('\n💬 Creating messages...');
+    for (const message of fakeMessages) {
+      const query = `
+        INSERT INTO messages (conversation_id, sender_id, message_type, content, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        RETURNING id
+      `;
+      
+      const values = [
+        message.conversation_id,
+        message.sender_id,
+        message.message_type,
+        message.content
+      ];
+      
+      await pool.query(query, values);
+      console.log(`✅ Created message in conversation ${message.conversation_id}`);
+    }
+
     // Insert fake rental listings
     console.log('\n📢 Creating rental listings...');
     for (const listing of fakeRentalListings) {
@@ -570,6 +700,8 @@ async function seedDatabase() {
     console.log(`   - ${fakeRentalUnits.length} rental units`);
     console.log(`   - ${fakeLeases.length} active leases`);
     console.log(`   - ${fakeRentalListings.length} rental listings`);
+    console.log(`   - ${fakeConversations.length} conversations`);
+    console.log(`   - ${fakeMessages.length} messages`);
     console.log('\n📋 Test Login Credentials:');
     console.log('All users use password: password123');
     console.log('Landlords: jane.smith@example.com, sarah.wilson@example.com');
