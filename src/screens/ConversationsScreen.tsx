@@ -162,7 +162,7 @@ const ConversationsScreen: React.FC = () => {
     setFilteredConversations(filtered);
   };
 
-  const getConversationTypeIcon = (type: string) => {
+  const getConversationTypeIcon = (type: string): string => {
     const typeInfo = conversationTypes.find(t => t.value === type);
     return typeInfo?.icon || 'chat';
   };
@@ -237,7 +237,7 @@ const ConversationsScreen: React.FC = () => {
   };
 
   const navigateToChat = (conversationId: number) => {
-    navigation.navigate('Chat' as never, { conversationId } as never);
+            navigation.navigate('Chat' as any, { conversationId } as any);
   };
 
   return (
@@ -346,7 +346,6 @@ const ConversationsScreen: React.FC = () => {
               onChangeText={(text) => setNewConversation(prev => ({ ...prev, conversation_type: text }))}
               mode="outlined"
               style={styles.input}
-              list={conversationTypes.map(t => t.value).join(',')}
             />
 
             <Text style={styles.sectionTitle}>Select Participants</Text>

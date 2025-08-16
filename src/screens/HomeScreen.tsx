@@ -6,11 +6,31 @@ import { NetworkStatus } from '../components/NetworkStatus';
 import { getAppName } from '../config/app';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+
+type RootStackParamList = {
+  PremisesManagement: undefined;
+  RentalUnits: undefined;
+  RentalListings: undefined;
+  LeaseManagement: undefined;
+  OrganizationManagement: undefined;
+  Conversations: undefined;
+  MyLeases: undefined;
+  RentPayments: undefined;
+  MaintenanceRequests: undefined;
+  WorkmanMaintenance: undefined;
+  SearchRentals: undefined;
+  SavedRentals: undefined;
+  Settings: undefined;
+  HelpSupport: undefined;
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const HomeScreen: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const [menuVisible, setMenuVisible] = useState(false);
 
   const showMenu = () => setMenuVisible(true);

@@ -895,16 +895,6 @@ const LandlordMaintenanceScreen: React.FC = () => {
             }}
             mode="outlined"
             style={styles.modalInput}
-            render={({ value, ...props }) => (
-              <TextInput
-                {...props}
-                value={premises.find(p => p.id.toString() === value)?.name || ''}
-                onPressIn={() => {
-                  // Show picker or dropdown for premises selection
-                  // For now, we'll use a simple text input
-                }}
-              />
-            )}
           />
 
           {createRequestData.premises_id && (
@@ -914,16 +904,6 @@ const LandlordMaintenanceScreen: React.FC = () => {
               onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, rental_unit_id: text }))}
               mode="outlined"
               style={styles.modalInput}
-              render={({ value, ...props }) => (
-                <TextInput
-                  {...props}
-                  value={rentalUnits.find(ru => ru.id.toString() === value)?.unit_number || ''}
-                  onPressIn={() => {
-                    // Show picker or dropdown for rental unit selection
-                    // For now, we'll use a simple text input
-                  }}
-                />
-              )}
             />
           )}
 
@@ -942,16 +922,6 @@ const LandlordMaintenanceScreen: React.FC = () => {
             onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, tenant_id: text }))}
             mode="outlined"
             style={styles.modalInput}
-            render={({ value, ...props }) => (
-              <TextInput
-                {...props}
-                value={tenants.find(t => t.id.toString() === value)?.first_name + ' ' + tenants.find(t => t.id.toString() === value)?.last_name || ''}
-                onPressIn={() => {
-                  // Show picker or dropdown for tenant selection
-                  // For now, we'll use a simple text input
-                }}
-              />
-            )}
           />
 
           <View style={styles.modalButtons}>

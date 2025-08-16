@@ -20,6 +20,10 @@ import MaintenanceDashboardScreen from '../screens/MaintenanceDashboardScreen';
 import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import ChatScreen from '../screens/ChatScreen';
+import SearchRentalsScreen from '../screens/SearchRentalsScreen';
+import SavedRentalsScreen from '../screens/SavedRentalsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -173,6 +177,30 @@ const AppNavigator: React.FC = () => {
             name="GeneralMaintenance" 
             component={MaintenanceRequestsScreen}
             options={{ title: 'Maintenance' }}
+          />
+          
+          {/* Search and Saved Rentals */}
+          <Stack.Screen 
+            name="SearchRentals" 
+            component={SearchRentalsScreen}
+            options={{ title: 'Search Rentals' }}
+          />
+          <Stack.Screen 
+            name="SavedRentals" 
+            component={SavedRentalsScreen}
+            options={{ title: 'Saved Rentals' }}
+          />
+          
+          {/* Settings and Help */}
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen}
+            options={{ title: 'Settings' }}
+          />
+          <Stack.Screen 
+            name="HelpSupport" 
+            component={HelpSupportScreen}
+            options={{ title: 'Help & Support' }}
           />
         </Stack.Navigator>
       ) : (

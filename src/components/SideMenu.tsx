@@ -64,7 +64,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="home" color={color} size={size} />
             )}
             label="Dashboard"
-            onPress={() => props.navigation.navigate('Home')}
+            onPress={() => navigation.navigate('Home')}
           />
           
           <DrawerItem
@@ -72,7 +72,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="magnify" color={color} size={size} />
             )}
             label="Search Rentals"
-            onPress={() => props.navigation.navigate('SearchRentals')}
+            onPress={() => navigation.navigate('SearchRentals')}
           />
 
           <DrawerItem
@@ -80,7 +80,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="heart" color={color} size={size} />
             )}
             label="Saved Rentals"
-            onPress={() => props.navigation.navigate('SavedRentals')}
+            onPress={() => navigation.navigate('SavedRentals')}
           />
         </View>
 
@@ -97,7 +97,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="office-building" color={color} size={size} />
                 )}
                 label="Premises Management"
-                onPress={() => props.navigation.navigate('PremisesManagement')}
+                onPress={() => navigation.navigate('PremisesManagement')}
               />
               
               <DrawerItem
@@ -105,7 +105,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="home-city" color={color} size={size} />
                 )}
                 label="Rental Units"
-                onPress={() => props.navigation.navigate('RentalUnits')}
+                onPress={() => navigation.navigate('RentalUnits')}
               />
               
               <DrawerItem
@@ -113,7 +113,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="format-list-bulleted" color={color} size={size} />
                 )}
                 label="Rental Listings"
-                onPress={() => props.navigation.navigate('RentalListings')}
+                onPress={() => navigation.navigate('RentalListings')}
               />
               
               <DrawerItem
@@ -121,7 +121,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="file-document" color={color} size={size} />
                 )}
                 label="Lease Management"
-                onPress={() => props.navigation.navigate('LeaseManagement')}
+                onPress={() => navigation.navigate('LeaseManagement')}
               />
             </View>
 
@@ -136,7 +136,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="wrench" color={color} size={size} />
                 )}
                 label="Maintenance Requests"
-                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+                onPress={() => navigation.navigate('LandlordMaintenance')}
               />
               
               <DrawerItem
@@ -144,7 +144,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="clipboard-list" color={color} size={size} />
                 )}
                 label="Work Orders"
-                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+                onPress={() => navigation.navigate('LandlordMaintenance')}
               />
               
               <DrawerItem
@@ -152,7 +152,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="chart-line" color={color} size={size} />
                 )}
                 label="Maintenance Analytics"
-                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+                onPress={() => navigation.navigate('LandlordMaintenance')}
               />
             </View>
 
@@ -171,7 +171,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="file-document" color={color} size={size} />
                 )}
                 label="My Leases"
-                onPress={() => props.navigation.navigate('MyLeases')}
+                onPress={() => navigation.navigate('MyLeases')}
               />
               
               <DrawerItem
@@ -179,7 +179,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="calendar" color={color} size={size} />
                 )}
                 label="Rent Payments"
-                onPress={() => props.navigation.navigate('RentPayments')}
+                onPress={() => navigation.navigate('RentPayments')}
               />
             </View>
 
@@ -194,7 +194,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="wrench" color={color} size={size} />
                 )}
                 label="My Requests"
-                onPress={() => props.navigation.navigate('MaintenanceRequests')}
+                onPress={() => navigation.navigate('MaintenanceRequests')}
               />
               
               <DrawerItem
@@ -202,7 +202,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="clipboard-check" color={color} size={size} />
                 )}
                 label="Request Status"
-                onPress={() => props.navigation.navigate('MaintenanceRequests')}
+                onPress={() => navigation.navigate('MaintenanceRequests')}
               />
               
               <DrawerItem
@@ -210,7 +210,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="star" color={color} size={size} />
                 )}
                 label="Rate Completed Work"
-                onPress={() => props.navigation.navigate('MaintenanceRequests')}
+                onPress={() => navigation.navigate('MaintenanceRequests')}
               />
             </View>
 
@@ -229,7 +229,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="wrench" color={color} size={size} />
                 )}
                 label="Maintenance Tasks"
-                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
               />
               
               <DrawerItem
@@ -237,7 +237,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="clipboard-list" color={color} size={size} />
                 )}
                 label="My Work Orders"
-                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
               />
               
               <DrawerItem
@@ -245,7 +245,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="chart-line" color={color} size={size} />
                 )}
                 label="Performance Dashboard"
-                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
               />
               
               <DrawerItem
@@ -253,7 +253,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                   <MaterialCommunityIcons name="clock-outline" color={color} size={size} />
                 )}
                 label="Time Tracking"
-                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
               />
             </View>
 
@@ -270,7 +270,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="message-text" color={color} size={size} />
             )}
             label="Messages"
-            onPress={() => props.navigation.navigate('Messages')}
+            onPress={() => navigation.navigate('Messages')}
           />
           
           <DrawerItem
@@ -278,7 +278,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="wrench" color={color} size={size} />
             )}
             label="Maintenance Overview"
-            onPress={() => props.navigation.navigate('MaintenanceDashboard')}
+            onPress={() => navigation.navigate('MaintenanceDashboard')}
           />
           
           <DrawerItem
@@ -286,7 +286,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="account" color={color} size={size} />
             )}
             label="Profile"
-            onPress={() => props.navigation.navigate('Profile')}
+            onPress={() => navigation.navigate('Profile')}
           />
           
           <DrawerItem
@@ -294,7 +294,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="cog" color={color} size={size} />
             )}
             label="Settings"
-            onPress={() => props.navigation.navigate('Settings')}
+            onPress={() => navigation.navigate('Settings')}
           />
           
           <DrawerItem
@@ -302,7 +302,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="help-circle" color={color} size={size} />
             )}
             label="Help & Support"
-            onPress={() => props.navigation.navigate('HelpSupport')}
+            onPress={() => navigation.navigate('HelpSupport')}
           />
         </View>
 
