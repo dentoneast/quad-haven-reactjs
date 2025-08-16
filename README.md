@@ -217,13 +217,18 @@ npm run web
 - `POST /api/rental-listings` - Create rental listings
 
 ### **Maintenance System** ✅ **COMPLETED**
-- `POST /api/maintenance-requests` - Create maintenance request
+- `POST /api/maintenance-requests` - Create maintenance request (tenants and landlords)
 - `GET /api/maintenance-requests` - List requests with filtering
 - `GET /api/maintenance-requests/:id` - Get request details
 - `PUT /api/maintenance-requests/:id/approve` - Approve/reject request
 - `POST /api/maintenance-requests/:id/assign` - Assign work order
 - `PUT /api/work-orders/:id/status` - Update work order status
 - `POST /api/maintenance-requests/:id/rate` - Rate completed request
+
+### **Landlord-Specific Endpoints** ✅ **NEW**
+- `GET /api/landlord/premises` - Get premises for landlord's organization
+- `GET /api/landlord/tenants` - Get tenants for landlord's organization
+- `POST /api/landlord/maintenance-requests` - Create maintenance request as landlord
 
 ### **Chat & Messaging**
 - `GET /api/conversations` - List user conversations
@@ -363,11 +368,14 @@ npm run server
 
 ### **Landlord Maintenance Screen Features**
 - **Request Management**: View, approve/reject, and assign work orders
+- **Request Creation**: Create new maintenance requests for organization properties
 - **Status Tracking**: Monitor requests from pending to completed
 - **Work Order Assignment**: Assign approved requests to workmen with detailed instructions
 - **Filtering**: Filter by status and priority
 - **Summary Dashboard**: Overview of work orders and maintenance status
 - **Tenant Rating Display**: View tenant feedback for completed work
+- **Property Selection**: Choose from organization premises and rental units
+- **Tenant Assignment**: Optionally assign requests to specific tenants
 
 ### **Workman Maintenance Screen Features**
 - **Performance Dashboard**: Track total orders, hours worked, and efficiency
@@ -390,7 +398,9 @@ npm run server
 - **Timeline Tracking**: Complete history from request to completion
 
 ### **Maintenance Workflow**
-1. **Tenant submits request** → Status: `pending`
+1. **Request Creation** → Status: `pending`
+   - **Tenants** can create requests for their rented properties
+   - **Landlords** can create requests for any property in their organization
 2. **Landlord reviews and approves** → Status: `approved`
 3. **Landlord assigns work order** → Status: `assigned`
 4. **Workman starts work** → Status: `in_progress`
@@ -549,6 +559,7 @@ For support and questions, please open an issue in the repository.
 - ✅ **Tenant Rating System**: Feedback and rating for completed work
 - ✅ **Multi-Tenancy**: Organization-based property management
 - ✅ **Chat Messaging**: Real-time communication between users
+- ✅ **Landlord Maintenance Creation**: Landlords can create and manage maintenance requests for organization properties
 
 ### **Planned Features**
 - Real-time notifications

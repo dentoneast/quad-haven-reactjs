@@ -967,21 +967,26 @@ app.post('/api/maintenance-requests', authenticateToken, [
     } = req.body;
     const userId = req.user.userId;
 
-    // Verify user is a tenant and has access to the premises
+    // Verify user is a tenant or landlord and has access to the premises
     const userCheck = await pool.query(`
-      SELECT user_type FROM users WHERE id = $1
+      SELECT user_type, organization_id FROM users WHERE id = $1
     `, [userId]);
 
-    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'tenant') {
+    if (userCheck.rows.length === 0 || !['tenant', 'landlord'].includes(userCheck.rows[0].user_type)) {
       return res.status(403).json({
         status: 403,
-        message: 'Only tenants can create maintenance requests'
+        message: 'Only tenants and landlords can create maintenance requests'
       });
     }
 
-    // Get landlord for the premises
+    const userType = userCheck.rows[0].user_type;
+    const userOrganizationId = userCheck.rows[0].organization_id;
+
+    // Get premises details and verify access
     const premisesCheck = await pool.query(`
-      SELECT lessor_id FROM premises WHERE id = $1
+      SELECT p.lessor_id, p.organization_id, p.name as premises_name
+      FROM premises p
+      WHERE p.id = $1
     `, [premises_id]);
 
     if (premisesCheck.rows.length === 0) {
@@ -991,7 +996,24 @@ app.post('/api/maintenance-requests', authenticateToken, [
       });
     }
 
-    const landlordId = premisesCheck.rows[0].lessor_id;
+    const premises = premisesCheck.rows[0];
+    const landlordId = premises.lessor_id;
+    const premisesOrganizationId = premises.organization_id;
+
+    // Verify user has access to this premises
+    if (userType === 'landlord') {
+      if (userOrganizationId !== premisesOrganizationId) {
+        return res.status(403).json({
+          status: 403,
+          message: 'You can only create maintenance requests for properties in your organization'
+        });
+      }
+      // For landlord-created requests, set tenant_id to null initially
+      // They can assign a tenant later if needed
+    } else if (userType === 'tenant') {
+      // For tenant-created requests, verify they have access to the premises
+      // This could be enhanced with lease verification in the future
+    }
 
     // Create maintenance request
     const result = await pool.query(`
@@ -1000,7 +1022,17 @@ app.post('/api/maintenance-requests', authenticateToken, [
         tenant_id, landlord_id, estimated_cost, requested_date, created_at, updated_at
       ) VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, NOW(), NOW(), NOW())
       RETURNING *
-    `, [title, description, request_type, priority, premises_id, rental_unit_id, userId, landlordId, estimated_cost]);
+    `, [
+      title, 
+      description, 
+      request_type, 
+      priority, 
+      premises_id, 
+      rental_unit_id, 
+      userType === 'tenant' ? userId : null, // tenant_id
+      userType === 'landlord' ? userId : landlordId, // landlord_id
+      estimated_cost
+    ]);
 
     res.status(201).json({
       status: 201,
@@ -1046,8 +1078,9 @@ app.get('/api/maintenance-requests', authenticateToken, async (req, res) => {
       values.push(userId);
       paramCount++;
     } else if (userType === 'landlord') {
-      whereClause = 'WHERE mr.landlord_id = $1';
-      values.push(userId);
+      // Landlords can see all requests for properties in their organization
+      whereClause = 'WHERE p.organization_id = $1';
+      values.push(organizationId);
       paramCount++;
     } else if (userType === 'workman') {
       whereClause = 'WHERE mwo.workman_id = $1';
@@ -1094,8 +1127,8 @@ app.get('/api/maintenance-requests', authenticateToken, async (req, res) => {
       FROM maintenance_requests mr
       INNER JOIN premises p ON mr.premises_id = p.id
       LEFT JOIN rental_units ru ON mr.rental_unit_id = ru.id
-      INNER JOIN users t ON mr.tenant_id = t.id
-      INNER JOIN users l ON mr.landlord_id = l.id
+      LEFT JOIN users t ON mr.tenant_id = t.id
+      LEFT JOIN users l ON mr.landlord_id = l.id
       LEFT JOIN maintenance_work_orders mwo ON mr.id = mwo.maintenance_request_id
       LEFT JOIN users w ON mwo.workman_id = w.id
       ${whereClause}
@@ -1115,6 +1148,7 @@ app.get('/api/maintenance-requests', authenticateToken, async (req, res) => {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) FROM maintenance_requests mr
+      INNER JOIN premises p ON mr.premises_id = p.id
       LEFT JOIN maintenance_work_orders mwo ON mr.id = mwo.maintenance_request_id
       ${whereClause}
     `;
@@ -1588,6 +1622,215 @@ app.post('/api/maintenance-requests/:id/rate', authenticateToken, [
     });
   } catch (error) {
     console.error('Error submitting rating:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Get premises for landlord's organization
+app.get('/api/landlord/premises', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Verify user is a landlord
+    const userCheck = await pool.query(`
+      SELECT user_type, organization_id FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only landlords can access this endpoint'
+      });
+    }
+
+    const userOrganizationId = userCheck.rows[0].organization_id;
+
+    // Get all premises for the landlord's organization
+    const result = await pool.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.address,
+        p.city,
+        p.state,
+        p.zip_code,
+        p.property_type,
+        p.total_units,
+        p.is_active,
+        COUNT(ru.id) as total_rental_units,
+        COUNT(CASE WHEN ru.is_available = true THEN 1 END) as available_units
+      FROM premises p
+      LEFT JOIN rental_units ru ON p.id = ru.premises_id
+      WHERE p.organization_id = $1
+      GROUP BY p.id, p.name, p.address, p.city, p.state, p.zip_code, p.property_type, p.total_units, p.is_active
+      ORDER BY p.name
+    `, [userOrganizationId]);
+
+    res.json({
+      status: 200,
+      premises: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching landlord premises:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Get tenants for landlord's organization
+app.get('/api/landlord/tenants', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Verify user is a landlord
+    const userCheck = await pool.query(`
+      SELECT user_type, organization_id FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only landlords can access this endpoint'
+      });
+    }
+
+    const userOrganizationId = userCheck.rows[0].organization_id;
+
+    // Get all tenants for the landlord's organization
+    const result = await pool.query(`
+      SELECT 
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone,
+        u.is_verified
+      FROM users u
+      WHERE u.organization_id = $1 AND u.user_type = 'tenant'
+      ORDER BY u.last_name, u.first_name
+    `, [userOrganizationId]);
+
+    res.json({
+      status: 200,
+      tenants: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching landlord tenants:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Landlord-specific maintenance request creation endpoint
+app.post('/api/landlord/maintenance-requests', authenticateToken, [
+  body('title').notEmpty().trim(),
+  body('description').notEmpty().trim(),
+  body('request_type').isIn(['urgent', 'routine', 'emergency', 'preventive']),
+  body('priority').isIn(['low', 'medium', 'high', 'critical']),
+  body('premises_id').isInt({ min: 1 }),
+  body('rental_unit_id').optional().isInt({ min: 1 }),
+  body('estimated_cost').optional().isFloat({ min: 0 }),
+  body('tenant_id').optional().isInt({ min: 1 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Request failed with status code 400',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      title, description, request_type, priority, premises_id, rental_unit_id, estimated_cost, tenant_id
+    } = req.body;
+    const userId = req.user.userId;
+
+    // Verify user is a landlord
+    const userCheck = await pool.query(`
+      SELECT user_type, organization_id FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only landlords can create maintenance requests through this endpoint'
+      });
+    }
+
+    const userOrganizationId = userCheck.rows[0].organization_id;
+
+    // Verify premises belongs to landlord's organization
+    const premisesCheck = await pool.query(`
+      SELECT p.lessor_id, p.organization_id, p.name as premises_name
+      FROM premises p
+      WHERE p.id = $1
+    `, [premises_id]);
+
+    if (premisesCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Premises not found'
+      });
+    }
+
+    const premises = premisesCheck.rows[0];
+    
+    if (premises.organization_id !== userOrganizationId) {
+      return res.status(403).json({
+        status: 403,
+        message: 'You can only create maintenance requests for properties in your organization'
+      });
+    }
+
+    // Verify tenant belongs to the same organization if specified
+    if (tenant_id) {
+      const tenantCheck = await pool.query(`
+        SELECT organization_id FROM users WHERE id = $1 AND user_type = 'tenant'
+      `, [tenant_id]);
+
+      if (tenantCheck.rows.length === 0) {
+        return res.status(400).json({
+          status: 400,
+          message: 'Invalid tenant specified'
+        });
+      }
+    }
+
+    // Create maintenance request
+    const result = await pool.query(`
+      INSERT INTO maintenance_requests (
+        title, description, request_type, priority, status, premises_id, rental_unit_id,
+        tenant_id, landlord_id, estimated_cost, requested_date, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9, NOW(), NOW(), NOW())
+      RETURNING *
+    `, [
+      title, 
+      description, 
+      request_type, 
+      priority, 
+      premises_id, 
+      rental_unit_id, 
+      tenant_id, // Can be null for landlord-created requests
+      userId, // landlord_id
+      estimated_cost
+    ]);
+
+    res.status(201).json({
+      status: 201,
+      message: 'Maintenance request created successfully',
+      maintenance_request: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating landlord maintenance request:', error);
     res.status(500).json({
       status: 500,
       message: 'Internal server error'

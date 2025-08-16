@@ -86,6 +86,124 @@ const LandlordMaintenanceScreen: React.FC = () => {
     special_instructions: '',
   });
 
+  // Create request modal state
+  const [createRequestModalVisible, setCreateRequestModalVisible] = useState(false);
+  const [createRequestData, setCreateRequestData] = useState({
+    title: '',
+    description: '',
+    request_type: 'routine' as 'routine' | 'urgent' | 'emergency' | 'preventive',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
+    premises_id: '',
+    rental_unit_id: '',
+    estimated_cost: '',
+    tenant_id: '',
+  });
+  const [premises, setPremises] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [rentalUnits, setRentalUnits] = useState<any[]>([]);
+
+  // Fetch premises and tenants for the landlord
+  useEffect(() => {
+    if (user?.user_type === 'landlord') {
+      fetchPremises();
+      fetchTenants();
+    }
+  }, [user]);
+
+  const fetchPremises = async () => {
+    try {
+      const response = await fetch(`/api/landlord/premises`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPremises(data.premises || []);
+      }
+    } catch (error) {
+      console.error('Error fetching premises:', error);
+    }
+  };
+
+  const fetchTenants = async () => {
+    try {
+      const response = await fetch(`/api/landlord/tenants`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTenants(data.tenants || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+    }
+  };
+
+  const fetchRentalUnits = async (premisesId: string) => {
+    if (!premisesId) {
+      setRentalUnits([]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/rental-units?premises_id=${premisesId}`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRentalUnits(data.rental_units || []);
+      }
+    } catch (error) {
+      console.error('Error fetching rental units:', error);
+    }
+  };
+
+  const handleCreateRequest = async () => {
+    try {
+      const response = await fetch('/api/landlord/maintenance-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({
+          ...createRequestData,
+          premises_id: parseInt(createRequestData.premises_id),
+          rental_unit_id: createRequestData.rental_unit_id ? parseInt(createRequestData.rental_unit_id) : undefined,
+          estimated_cost: createRequestData.estimated_cost ? parseFloat(createRequestData.estimated_cost) : undefined,
+          tenant_id: createRequestData.tenant_id ? parseInt(createRequestData.tenant_id) : undefined,
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Maintenance request created successfully');
+        setCreateRequestModalVisible(false);
+        setCreateRequestData({
+          title: '',
+          description: '',
+          request_type: 'routine',
+          priority: 'medium',
+          premises_id: '',
+          rental_unit_id: '',
+          estimated_cost: '',
+          tenant_id: '',
+        });
+        // Refresh the maintenance requests list
+        // fetchMaintenanceRequests();
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to create maintenance request');
+      }
+    } catch (error) {
+      console.error('Error creating maintenance request:', error);
+      Alert.alert('Error', 'Failed to create maintenance request');
+    }
+  };
+
   // Mock data for demonstration
   const mockMaintenanceRequests: MaintenanceRequest[] = [
     {
@@ -347,6 +465,14 @@ const LandlordMaintenanceScreen: React.FC = () => {
               ]}
               style={styles.segmentedButtons}
             />
+            <Button
+              mode="contained"
+              onPress={() => setCreateRequestModalVisible(true)}
+              style={{ marginTop: 16 }}
+              icon="plus"
+            >
+              Create Maintenance Request
+            </Button>
           </Card.Content>
         </Card>
 
@@ -683,6 +809,150 @@ const LandlordMaintenanceScreen: React.FC = () => {
               style={styles.modalButton}
             >
               Assign
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      {/* Create Request Modal */}
+      <Portal>
+        <Modal
+          visible={createRequestModalVisible}
+          onDismiss={() => setCreateRequestModalVisible(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Title style={styles.modalTitle}>Create Maintenance Request</Title>
+          
+          <TextInput
+            label="Title"
+            value={createRequestData.title}
+            onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, title: text }))}
+            mode="outlined"
+            style={styles.modalInput}
+          />
+          
+          <TextInput
+            label="Description"
+            value={createRequestData.description}
+            onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, description: text }))}
+            mode="outlined"
+            multiline
+            numberOfLines={3}
+            style={styles.modalInput}
+          />
+
+          <SegmentedButtons
+            value={createRequestData.request_type}
+            onValueChange={(value) => setCreateRequestData(prev => ({ 
+              ...prev, 
+              request_type: value as 'routine' | 'urgent' | 'emergency' | 'preventive' 
+            }))}
+            buttons={[
+              { value: 'routine', label: 'Routine' },
+              { value: 'urgent', label: 'Urgent' },
+              { value: 'emergency', label: 'Emergency' },
+              { value: 'preventive', label: 'Preventive' },
+            ]}
+            style={styles.modalInput}
+          />
+
+          <SegmentedButtons
+            value={createRequestData.priority}
+            onValueChange={(value) => setCreateRequestData(prev => ({ 
+              ...prev, 
+              priority: value as 'low' | 'medium' | 'high' | 'critical' 
+            }))}
+            buttons={[
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+              { value: 'critical', label: 'Critical' },
+            ]}
+            style={styles.modalInput}
+          />
+
+          <TextInput
+            label="Premises"
+            value={createRequestData.premises_id}
+            onChangeText={(text) => {
+              setCreateRequestData(prev => ({ ...prev, premises_id: text, rental_unit_id: '' }));
+              fetchRentalUnits(text);
+            }}
+            mode="outlined"
+            style={styles.modalInput}
+            render={({ value, ...props }) => (
+              <TextInput
+                {...props}
+                value={premises.find(p => p.id.toString() === value)?.name || ''}
+                onPressIn={() => {
+                  // Show picker or dropdown for premises selection
+                  // For now, we'll use a simple text input
+                }}
+              />
+            )}
+          />
+
+          {createRequestData.premises_id && (
+            <TextInput
+              label="Rental Unit (Optional)"
+              value={createRequestData.rental_unit_id}
+              onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, rental_unit_id: text }))}
+              mode="outlined"
+              style={styles.modalInput}
+              render={({ value, ...props }) => (
+                <TextInput
+                  {...props}
+                  value={rentalUnits.find(ru => ru.id.toString() === value)?.unit_number || ''}
+                  onPressIn={() => {
+                    // Show picker or dropdown for rental unit selection
+                    // For now, we'll use a simple text input
+                  }}
+                />
+              )}
+            />
+          )}
+
+          <TextInput
+            label="Estimated Cost (Optional)"
+            value={createRequestData.estimated_cost}
+            onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, estimated_cost: text }))}
+            mode="outlined"
+            keyboardType="numeric"
+            style={styles.modalInput}
+          />
+
+          <TextInput
+            label="Assign to Tenant (Optional)"
+            value={createRequestData.tenant_id}
+            onChangeText={(text) => setCreateRequestData(prev => ({ ...prev, tenant_id: text }))}
+            mode="outlined"
+            style={styles.modalInput}
+            render={({ value, ...props }) => (
+              <TextInput
+                {...props}
+                value={tenants.find(t => t.id.toString() === value)?.first_name + ' ' + tenants.find(t => t.id.toString() === value)?.last_name || ''}
+                onPressIn={() => {
+                  // Show picker or dropdown for tenant selection
+                  // For now, we'll use a simple text input
+                }}
+              />
+            )}
+          />
+
+          <View style={styles.modalButtons}>
+            <Button
+              mode="outlined"
+              onPress={() => setCreateRequestModalVisible(false)}
+              style={styles.modalButton}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreateRequest}
+              style={styles.modalButton}
+            >
+              Create Request
             </Button>
           </View>
         </Modal>
