@@ -516,6 +516,11 @@ If you encounter "Network request failed" errors:
    - Run `node server/reset-db.js` to clear database
    - Run `npm run db:push` to recreate with new schema
 
+3. **User Role Mismatches**
+   - If users have incorrect roles, reset and reseed the database
+   - Run `node server/reset-db.js` then `npm run db:push`
+   - This ensures all users have the correct roles as defined in seed data
+
 ### **Server Issues**
 1. **Port Already in Use**
    - Change the port in `.env` file
