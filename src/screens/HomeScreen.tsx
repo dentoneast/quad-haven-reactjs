@@ -17,6 +17,7 @@ const HomeScreen: React.FC = () => {
   const hideMenu = () => setMenuVisible(false);
 
   const isLandlord = user?.user_type === 'landlord';
+  const isWorkman = user?.user_type === 'workman';
 
   return (
     <View style={styles.container}>
@@ -29,7 +30,7 @@ const HomeScreen: React.FC = () => {
             <View style={styles.headerText}>
               <Title style={styles.title}>Welcome to {getAppName()}</Title>
               <Text style={styles.subtitle}>
-                Hello, {user?.first_name}! Ready to find your next rental?
+                Hello, {user?.first_name}! {isWorkman ? 'Ready to tackle today\'s work orders?' : 'Ready to find your next rental?'}
               </Text>
             </View>
           </View>
@@ -112,7 +113,7 @@ const HomeScreen: React.FC = () => {
         )}
 
         {/* Tenant Section */}
-        {!isLandlord && (
+        {!isLandlord && !isWorkman && (
           <Surface style={styles.section}>
             <Title style={styles.sectionTitle}>My Rentals</Title>
             <View style={styles.gridContainer}>
@@ -136,6 +137,36 @@ const HomeScreen: React.FC = () => {
               >
                 <MaterialCommunityIcons name="wrench" size={32} color="#6200ee" />
                 <Text style={styles.gridItemText}>Maintenance</Text>
+              </TouchableOpacity>
+            </View>
+          </Surface>
+        )}
+
+        {/* Workman Section */}
+        {isWorkman && (
+          <Surface style={styles.section}>
+            <Title style={styles.sectionTitle}>Work Orders</Title>
+            <View style={styles.gridContainer}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              >
+                <MaterialCommunityIcons name="wrench" size={32} color="#6200ee" />
+                <Text style={styles.gridItemText}>Maintenance Tasks</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              >
+                <MaterialCommunityIcons name="chart-line" size={32} color="#6200ee" />
+                <Text style={styles.gridItemText}>Performance Dashboard</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => navigation.navigate('Conversations')}
+              >
+                <MaterialCommunityIcons name="chat" size={32} color="#6200ee" />
+                <Text style={styles.gridItemText}>Messages</Text>
               </TouchableOpacity>
             </View>
           </Surface>

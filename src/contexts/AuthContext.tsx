@@ -12,7 +12,7 @@ interface User {
   address?: string;
   profile_image_url?: string;
   is_verified: boolean;
-  user_type?: 'tenant' | 'landlord' | 'admin';
+  user_type?: 'tenant' | 'landlord' | 'admin' | 'workman';
   created_at: string;
   updated_at?: string;
 }

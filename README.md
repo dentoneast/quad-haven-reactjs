@@ -521,6 +521,11 @@ If you encounter "Network request failed" errors:
    - Run `node server/reset-db.js` then `npm run db:push`
    - This ensures all users have the correct roles as defined in seed data
 
+4. **User Profile Role Display Issues**
+   - If user profiles don't show correct roles, ensure the server is restarted after code changes
+   - The profile endpoint now correctly returns `user_type` field for all user types including 'workman'
+   - UI components have been updated to properly display workman roles with 🔧 icon
+
 ### **Server Issues**
 1. **Port Already in Use**
    - Change the port in `.env` file

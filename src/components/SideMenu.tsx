@@ -51,7 +51,8 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
           </Title>
           <Caption style={styles.userEmail}>{user?.email}</Caption>
           <Caption style={styles.userType}>
-            {user?.user_type === 'landlord' ? '🏠 Landlord' : '👤 Tenant'}
+            {user?.user_type === 'landlord' ? '🏠 Landlord' : 
+             user?.user_type === 'workman' ? '🔧 Workman' : '👤 Tenant'}
           </Caption>
         </View>
 
@@ -157,6 +158,33 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
                 )}
                 label="Maintenance Requests"
                 onPress={() => props.navigation.navigate('MaintenanceRequests')}
+              />
+            </View>
+
+            <Divider style={styles.divider} />
+          </>
+        )}
+
+        {/* Workman Section */}
+        {user?.user_type === 'workman' && (
+          <>
+            <View style={styles.section}>
+              <Title style={styles.sectionTitle}>Work Orders</Title>
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="wrench" color={color} size={size} />
+                )}
+                label="Maintenance Tasks"
+                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="chart-line" color={color} size={size} />
+                )}
+                label="Performance Dashboard"
+                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
               />
             </View>
 

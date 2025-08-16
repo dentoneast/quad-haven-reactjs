@@ -160,7 +160,8 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.email}>{user.email}</Text>
         <Text style={styles.userType}>
           {user.user_type === 'landlord' ? '🏠 Landlord' : 
-           user.user_type === 'admin' ? '👑 Admin' : '👤 Tenant'}
+           user.user_type === 'admin' ? '👑 Admin' : 
+           user.user_type === 'workman' ? '🔧 Workman' : '👤 Tenant'}
         </Text>
         {user.is_verified && (
           <Text style={styles.verified}>✓ Verified Account</Text>

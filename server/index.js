@@ -38,7 +38,7 @@ async function initializeDatabase() {
         address TEXT,
         profile_image_url TEXT,
         is_verified BOOLEAN DEFAULT FALSE,
-        user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin')),
+        user_type VARCHAR(20) DEFAULT 'tenant' CHECK (user_type IN ('tenant', 'landlord', 'admin', 'workman')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -365,7 +365,7 @@ app.post('/api/auth/logout', authenticateToken, async (req, res) => {
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
     const user = await pool.query(
-      'SELECT id, email, first_name, last_name, phone, date_of_birth, address, profile_image_url, is_verified, created_at FROM users WHERE id = $1',
+      'SELECT id, email, first_name, last_name, phone, date_of_birth, address, profile_image_url, is_verified, user_type, created_at FROM users WHERE id = $1',
       [req.user.userId]
     );
 
@@ -433,7 +433,7 @@ app.put('/api/user/profile', authenticateToken, [
     values.push(req.user.userId);
 
     const updatedUser = await pool.query(
-      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING id, email, first_name, last_name, phone, date_of_birth, address, profile_image_url, is_verified, updated_at`,
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING id, email, first_name, last_name, phone, date_of_birth, address, profile_image_url, is_verified, user_type, updated_at`,
       values
     );
 
