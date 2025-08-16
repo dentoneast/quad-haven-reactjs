@@ -1629,14 +1629,14 @@ app.post('/api/maintenance-requests/:id/rate', authenticateToken, [
   }
 });
 
-// Get premises for landlord's organization
+// Get premises for landlord
 app.get('/api/landlord/premises', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
     // Verify user is a landlord
     const userCheck = await pool.query(`
-      SELECT user_type, organization_id FROM users WHERE id = $1
+      SELECT user_type FROM users WHERE id = $1
     `, [userId]);
 
     if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
@@ -1646,9 +1646,7 @@ app.get('/api/landlord/premises', authenticateToken, async (req, res) => {
       });
     }
 
-    const userOrganizationId = userCheck.rows[0].organization_id;
-
-    // Get all premises for the landlord's organization
+    // Get all premises owned by this landlord
     const result = await pool.query(`
       SELECT 
         p.id,
@@ -1664,10 +1662,10 @@ app.get('/api/landlord/premises', authenticateToken, async (req, res) => {
         COUNT(CASE WHEN ru.is_available = true THEN 1 END) as available_units
       FROM premises p
       LEFT JOIN rental_units ru ON p.id = ru.premises_id
-      WHERE p.organization_id = $1
+      WHERE p.lessor_id = $1
       GROUP BY p.id, p.name, p.address, p.city, p.state, p.zip_code, p.property_type, p.total_units, p.is_active
       ORDER BY p.name
-    `, [userOrganizationId]);
+    `, [userId]);
 
     res.json({
       status: 200,
@@ -1682,14 +1680,14 @@ app.get('/api/landlord/premises', authenticateToken, async (req, res) => {
   }
 });
 
-// Get tenants for landlord's organization
+// Get tenants for landlord
 app.get('/api/landlord/tenants', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
     // Verify user is a landlord
     const userCheck = await pool.query(`
-      SELECT user_type, organization_id FROM users WHERE id = $1
+      SELECT user_type FROM users WHERE id = $1
     `, [userId]);
 
     if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
@@ -1699,11 +1697,9 @@ app.get('/api/landlord/tenants', authenticateToken, async (req, res) => {
       });
     }
 
-    const userOrganizationId = userCheck.rows[0].organization_id;
-
-    // Get all tenants for the landlord's organization
+    // Get all tenants who have leases with this landlord's properties
     const result = await pool.query(`
-      SELECT 
+      SELECT DISTINCT
         u.id,
         u.first_name,
         u.last_name,
@@ -1711,9 +1707,12 @@ app.get('/api/landlord/tenants', authenticateToken, async (req, res) => {
         u.phone,
         u.is_verified
       FROM users u
-      WHERE u.organization_id = $1 AND u.user_type = 'tenant'
+      JOIN leases l ON u.id = l.lessee_id
+      JOIN rental_units ru ON l.rental_unit_id = ru.id
+      JOIN premises p ON ru.premises_id = p.id
+      WHERE p.lessor_id = $1 AND u.user_type = 'tenant'
       ORDER BY u.last_name, u.first_name
-    `, [userOrganizationId]);
+    `, [userId]);
 
     res.json({
       status: 200,
@@ -1756,7 +1755,7 @@ app.post('/api/landlord/maintenance-requests', authenticateToken, [
 
     // Verify user is a landlord
     const userCheck = await pool.query(`
-      SELECT user_type, organization_id FROM users WHERE id = $1
+      SELECT user_type FROM users WHERE id = $1
     `, [userId]);
 
     if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'landlord') {
@@ -1766,11 +1765,9 @@ app.post('/api/landlord/maintenance-requests', authenticateToken, [
       });
     }
 
-    const userOrganizationId = userCheck.rows[0].organization_id;
-
-    // Verify premises belongs to landlord's organization
+    // Verify premises belongs to this landlord
     const premisesCheck = await pool.query(`
-      SELECT p.lessor_id, p.organization_id, p.name as premises_name
+      SELECT p.lessor_id, p.name as premises_name
       FROM premises p
       WHERE p.id = $1
     `, [premises_id]);
@@ -1784,17 +1781,17 @@ app.post('/api/landlord/maintenance-requests', authenticateToken, [
 
     const premises = premisesCheck.rows[0];
     
-    if (premises.organization_id !== userOrganizationId) {
+    if (premises.lessor_id !== userId) {
       return res.status(403).json({
         status: 403,
-        message: 'You can only create maintenance requests for properties in your organization'
+        message: 'You can only create maintenance requests for properties you own'
       });
     }
 
-    // Verify tenant belongs to the same organization if specified
+    // Verify tenant exists and is a tenant if specified
     if (tenant_id) {
       const tenantCheck = await pool.query(`
-        SELECT organization_id FROM users WHERE id = $1 AND user_type = 'tenant'
+        SELECT user_type FROM users WHERE id = $1 AND user_type = 'tenant'
       `, [tenant_id]);
 
       if (tenantCheck.rows.length === 0) {

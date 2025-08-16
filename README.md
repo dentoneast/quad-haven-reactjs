@@ -248,7 +248,7 @@ npm run web
 - `PUT /api/work-orders/:id/status` - Update work order status
 - `POST /api/maintenance-requests/:id/rate` - Rate completed request
 
-### **Landlord-Specific Endpoints** ✅ **NEW**
+### **Landlord-Specific Endpoints** ✅ **COMPLETED**
 - `GET /api/landlord/premises` - Get premises for landlord's organization
 - `GET /api/landlord/tenants` - Get tenants for landlord's organization
 - `POST /api/landlord/maintenance-requests` - Create maintenance request as landlord
@@ -607,6 +607,12 @@ If you encounter "The action 'NAVIGATE' with payload was not handled by any navi
 - Verify all dependencies are installed
 - Ensure environment variables are set correctly
 - Check database schema matches code expectations
+
+### **Landlord Endpoints Issues** ✅ **RESOLVED**
+- **Problem**: "ERROR Error loading landlord data: [AxiosError: Request failed with status code 404]"
+- **Root Cause**: Database schema was missing `organization_id` fields that the landlord endpoints required
+- **Solution**: Reset and recreate database using `npm run db:push` to ensure correct schema
+- **Status**: All landlord endpoints now working correctly with proper organization support
 
 ## 🤝 Contributing
 
