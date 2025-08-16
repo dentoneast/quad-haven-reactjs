@@ -86,6 +86,45 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
 
         <Divider style={styles.divider} />
 
+        {/* Quick Maintenance Access - Available to All Users */}
+        <View style={styles.section}>
+          <Title style={styles.sectionTitle}>Quick Maintenance</Title>
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="plus-circle" color={color} size={size} />
+            )}
+            label="New Request"
+            onPress={() => {
+              if (user?.user_type === 'landlord') {
+                navigation.navigate('LandlordMaintenance');
+              } else if (user?.user_type === 'tenant') {
+                navigation.navigate('MaintenanceRequests');
+              } else if (user?.user_type === 'workman') {
+                navigation.navigate('WorkmanMaintenance');
+              }
+            }}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="eye" color={color} size={size} />
+            )}
+            label="View Status"
+            onPress={() => navigation.navigate('MaintenanceDashboard')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="bell-ring" color={color} size={size} />
+            )}
+            label="Notifications"
+            onPress={() => navigation.navigate('MaintenanceDashboard')}
+          />
+        </View>
+
+        <Divider style={styles.divider} />
+
         {/* Rental Management Section */}
         {user?.user_type === 'landlord' && (
           <>
@@ -154,6 +193,53 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                 label="Maintenance Analytics"
                 onPress={() => navigation.navigate('LandlordMaintenance')}
               />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="account-group" color={color} size={size} />
+                )}
+                label="Workman Management"
+                onPress={() => navigation.navigate('LandlordMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="calendar-clock" color={color} size={size} />
+                )}
+                label="Maintenance Schedule"
+                onPress={() => navigation.navigate('LandlordMaintenance')}
+              />
+            </View>
+
+            <Divider style={styles.divider} />
+            
+            {/* Maintenance Reports & Analytics */}
+            <View style={styles.section}>
+              <Title style={styles.sectionTitle}>Reports & Analytics</Title>
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="file-chart" color={color} size={size} />
+                )}
+                label="Maintenance Reports"
+                onPress={() => navigation.navigate('LandlordMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="trending-up" color={color} size={size} />
+                )}
+                label="Cost Analysis"
+                onPress={() => navigation.navigate('LandlordMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="account-multiple" color={color} size={size} />
+                )}
+                label="Workman Performance"
+                onPress={() => navigation.navigate('LandlordMaintenance')}
+              />
             </View>
 
             <Divider style={styles.divider} />
@@ -212,6 +298,38 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                 label="Rate Completed Work"
                 onPress={() => navigation.navigate('MaintenanceRequests')}
               />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="history" color={color} size={size} />
+                )}
+                label="Maintenance History"
+                onPress={() => navigation.navigate('MaintenanceRequests')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="calendar-check" color={color} size={size} />
+                )}
+                label="Scheduled Maintenance"
+                onPress={() => navigation.navigate('MaintenanceRequests')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="cog" color={color} size={size} />
+                )}
+                label="Maintenance Preferences"
+                onPress={() => navigation.navigate('MaintenanceRequests')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="bell" color={color} size={size} />
+                )}
+                label="Notification Settings"
+                onPress={() => navigation.navigate('MaintenanceRequests')}
+              />
             </View>
 
             <Divider style={styles.divider} />
@@ -255,6 +373,46 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
                 label="Time Tracking"
                 onPress={() => navigation.navigate('WorkmanMaintenance')}
               />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="tools" color={color} size={size} />
+                )}
+                label="Equipment & Tools"
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="file-document" color={color} size={size} />
+                )}
+                label="Work Reports"
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="calendar-range" color={color} size={size} />
+                )}
+                label="Work Schedule"
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="book-open-variant" color={color} size={size} />
+                )}
+                label="Maintenance Manuals"
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="phone" color={color} size={size} />
+                )}
+                label="Emergency Contacts"
+                onPress={() => navigation.navigate('WorkmanMaintenance')}
+              />
             </View>
 
             <Divider style={styles.divider} />
@@ -270,7 +428,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
               <MaterialCommunityIcons name="message-text" color={color} size={size} />
             )}
             label="Messages"
-            onPress={() => navigation.navigate('Messages')}
+            onPress={() => navigation.navigate('Conversations')}
           />
           
           <DrawerItem
@@ -279,6 +437,38 @@ const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
             )}
             label="Maintenance Overview"
             onPress={() => navigation.navigate('MaintenanceDashboard')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="alert-circle" color={color} size={size} />
+            )}
+            label="Emergency Maintenance"
+            onPress={() => navigation.navigate('MaintenanceDashboard')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="calendar-alert" color={color} size={size} />
+            )}
+            label="Maintenance Calendar"
+            onPress={() => navigation.navigate('MaintenanceDashboard')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="help-circle" color={color} size={size} />
+            )}
+            label="Maintenance Help"
+            onPress={() => navigation.navigate('HelpSupport')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="information" color={color} size={size} />
+            )}
+            label="Maintenance Guidelines"
+            onPress={() => navigation.navigate('HelpSupport')}
           />
           
           <DrawerItem

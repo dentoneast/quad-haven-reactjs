@@ -5,8 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { NetworkStatus } from '../components/NetworkStatus';
 import { getAppName } from '../config/app';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
 
 type RootStackParamList = {
   PremisesManagement: undefined;
@@ -26,15 +27,18 @@ type RootStackParamList = {
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+type HomeScreenDrawerProp = DrawerNavigationProp<any>;
 
 const HomeScreen: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const drawerNavigation = useNavigation<HomeScreenDrawerProp>();
   const [menuVisible, setMenuVisible] = useState(false);
 
   const showMenu = () => setMenuVisible(true);
   const hideMenu = () => setMenuVisible(false);
+  const openDrawer = () => drawerNavigation.openDrawer();
 
   const isLandlord = user?.user_type === 'landlord';
   const isWorkman = user?.user_type === 'workman';
@@ -44,7 +48,7 @@ const HomeScreen: React.FC = () => {
       <ScrollView style={styles.scrollView}>
         <Surface style={styles.header}>
           <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.menuButton} onPress={showMenu}>
+            <TouchableOpacity style={styles.menuButton} onPress={openDrawer}>
               <MaterialCommunityIcons name="menu" size={24} color="#6200ee" />
             </TouchableOpacity>
             <View style={styles.headerText}>
