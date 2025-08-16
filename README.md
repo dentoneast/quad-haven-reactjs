@@ -230,6 +230,10 @@ npm run web
 - `GET /api/landlord/tenants` - Get tenants for landlord's organization
 - `POST /api/landlord/maintenance-requests` - Create maintenance request as landlord
 
+### **Workman-Specific Endpoints** ✅ **NEW**
+- `GET /api/workman/work-orders` - Get work orders assigned to the authenticated workman
+- `GET /api/workman/dashboard` - Get workman performance dashboard and statistics
+
 ### **Chat & Messaging**
 - `GET /api/conversations` - List user conversations
 - `GET /api/conversations/:id` - Get conversation details
@@ -377,10 +381,12 @@ npm run server
 - **Property Selection**: Choose from organization premises and rental units
 - **Tenant Assignment**: Optionally assign requests to specific tenants
 
-### **Workman Maintenance Screen Features**
+### **Workman Maintenance Screen Features** ✅ **COMPLETED**
 - **Performance Dashboard**: Track total orders, hours worked, and efficiency
 - **Work Order Management**: View assigned, in-progress, and completed orders
 - **Status Updates**: Update work order status (start, pause, complete)
+- **Real-time API Integration**: Connected to backend endpoints for live data
+- **Work Order Status Management**: Complete workflow from assigned to completed
 - **Progress Tracking**: Monitor time vs. estimated hours
 - **Detailed Information**: Access to maintenance request details, tenant info, and special instructions
 - **Notes System**: Add progress notes and completion details
@@ -560,6 +566,7 @@ For support and questions, please open an issue in the repository.
 - ✅ **Multi-Tenancy**: Organization-based property management
 - ✅ **Chat Messaging**: Real-time communication between users
 - ✅ **Landlord Maintenance Creation**: Landlords can create and manage maintenance requests for organization properties
+- ✅ **Workman Task Management**: Complete work order workflow for workmen with real-time status updates
 
 ### **Planned Features**
 - Real-time notifications

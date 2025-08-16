@@ -12,6 +12,7 @@
     "db:push": "node server/setup-db.js && node server/seed-db.js",
     "test-api": "node test-api.js",
     "test-landlord": "node test-landlord-maintenance.js",
+
     "get-ip": "node scripts/get-ip.js",
     "update-app-name": "node scripts/update-app-name.js"
   },

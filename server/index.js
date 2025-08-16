@@ -2893,6 +2893,163 @@ app.delete('/api/rental-listings/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Workman-specific endpoints
+app.get('/api/workman/work-orders', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { status, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Verify user is a workman
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'workman') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only workmen can access this endpoint'
+      });
+    }
+
+    let whereClause = 'WHERE mwo.workman_id = $1';
+    const values = [userId];
+    let paramCount = 2;
+
+    if (status && status !== 'all') {
+      whereClause += ` AND mwo.status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    const query = `
+      SELECT 
+        mwo.*,
+        mr.title,
+        mr.description,
+        mr.request_type,
+        mr.priority,
+        mr.status as request_status,
+        mr.estimated_cost,
+        mr.requested_date,
+        p.name as premises_name,
+        p.address as premises_address,
+        ru.unit_number,
+        t.first_name as tenant_first_name,
+        t.last_name as tenant_last_name,
+        t.phone as tenant_phone,
+        l.first_name as landlord_first_name,
+        l.last_name as landlord_last_name,
+        l.phone as landlord_phone
+      FROM maintenance_work_orders mwo
+      INNER JOIN maintenance_requests mr ON mwo.maintenance_request_id = mr.id
+      INNER JOIN premises p ON mr.premises_id = p.id
+      LEFT JOIN rental_units ru ON mr.rental_unit_id = ru.id
+      LEFT JOIN users t ON mr.tenant_id = t.id
+      LEFT JOIN users l ON mr.landlord_id = l.id
+      ${whereClause}
+      ORDER BY 
+        CASE 
+          WHEN mr.priority = 'critical' THEN 1
+          WHEN mr.priority = 'high' THEN 2
+          WHEN mr.priority = 'medium' THEN 3
+          WHEN mr.priority = 'low' THEN 4
+        END,
+        mwo.assigned_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `;
+
+    const workOrders = await pool.query(query, [...values, limit, offset]);
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) FROM maintenance_work_orders mwo
+      ${whereClause}
+    `;
+    const totalCount = await pool.query(countQuery, values);
+
+    res.json({
+      status: 200,
+      work_orders: workOrders.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(totalCount.rows[0].count),
+        pages: Math.ceil(totalCount.rows[0].count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching workman work orders:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
+app.get('/api/workman/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Verify user is a workman
+    const userCheck = await pool.query(`
+      SELECT user_type FROM users WHERE id = $1
+    `, [userId]);
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].user_type !== 'workman') {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only workmen can access this endpoint'
+      });
+    }
+
+    // Get workman performance statistics
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_orders,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_orders,
+        COUNT(CASE WHEN status = 'assigned' THEN 1 END) as assigned_orders,
+        COALESCE(SUM(actual_hours), 0) as total_hours,
+        COALESCE(SUM(estimated_hours), 0) as estimated_hours
+      FROM maintenance_work_orders 
+      WHERE workman_id = $1
+    `, [userId]);
+
+    // Get recent work orders
+    const recentOrders = await pool.query(`
+      SELECT 
+        mwo.id,
+        mwo.work_order_number,
+        mwo.status,
+        mwo.assigned_date,
+        mr.title,
+        mr.priority,
+        p.name as premises_name
+      FROM maintenance_work_orders mwo
+      INNER JOIN maintenance_requests mr ON mwo.maintenance_request_id = mr.id
+      INNER JOIN premises p ON mr.premises_id = p.id
+      WHERE mwo.workman_id = $1
+      ORDER BY mwo.assigned_date DESC
+      LIMIT 5
+    `, [userId]);
+
+    res.json({
+      status: 200,
+      dashboard: {
+        statistics: stats.rows[0],
+        recent_orders: recentOrders.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching workman dashboard:', error);
+    res.status(500).json({
+      status: 500,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Initialize database and start server
 initializeDatabase().then(() => {
   app.listen(PORT, SERVER_CONFIG.HOST, () => {

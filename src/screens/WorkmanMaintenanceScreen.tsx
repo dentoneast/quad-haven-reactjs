@@ -21,9 +21,13 @@ import {
   Divider,
   Badge,
   ProgressBar,
+  ActivityIndicator,
 } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import axios from 'axios';
+import { getApiUrl } from '../config/app';
+import * as SecureStore from 'expo-secure-store';
 
 interface WorkOrder {
   id: number;
@@ -38,19 +42,19 @@ interface WorkOrder {
   notes?: string;
   materials_required: string[];
   special_instructions?: string;
-  maintenance_request: {
-    id: number;
-    title: string;
-    description: string;
-    request_type: 'routine' | 'urgent' | 'emergency';
-    priority: 'low' | 'medium' | 'high' | 'critical';
-    premises_name: string;
-    unit_number: string;
-    tenant_first_name: string;
-    tenant_last_name: string;
-    tenant_phone: string;
-    estimated_cost: string;
-  };
+  title: string;
+  description: string;
+  request_type: 'routine' | 'urgent' | 'emergency' | 'preventive';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  premises_name: string;
+  unit_number: string;
+  tenant_first_name: string;
+  tenant_last_name: string;
+  tenant_phone: string;
+  estimated_cost: string;
+  landlord_first_name?: string;
+  landlord_last_name?: string;
+  landlord_phone?: string;
 }
 
 const WorkmanMaintenanceScreen: React.FC = () => {
@@ -67,99 +71,32 @@ const WorkmanMaintenanceScreen: React.FC = () => {
     actual_hours: '',
   });
 
-  // Mock data for demonstration
-  const mockWorkOrders: WorkOrder[] = [
-    {
-      id: 1,
-      work_order_number: 'WO-2024-001',
-      work_description: 'Replace kitchen faucet cartridge and fix water leak under sink',
-      estimated_hours: 2,
-      actual_hours: 2.5,
-      status: 'completed',
-      assigned_date: '2024-01-17T08:00:00Z',
-      started_date: '2024-01-18T09:00:00Z',
-      completed_date: '2024-01-18T14:00:00Z',
-      notes: 'Replaced cartridge and sealed all connections. No more leaks.',
-      materials_required: ['faucet cartridge', 'plumber\'s tape', 'silicone sealant'],
-      special_instructions: 'Ensure water is completely turned off before starting work',
-      maintenance_request: {
-        id: 1,
-        title: 'Leaky Kitchen Faucet',
-        description: 'The kitchen faucet is dripping constantly and needs repair.',
-        request_type: 'routine',
-        priority: 'medium',
-        premises_name: 'Sunset Gardens Apartments',
-        unit_number: '101',
-        tenant_first_name: 'John',
-        tenant_last_name: 'Doe',
-        tenant_phone: '+1-555-0101',
-        estimated_cost: '150.00',
-      },
-    },
-    {
-      id: 2,
-      work_order_number: 'WO-2024-002',
-      work_description: 'Replace broken window lock mechanism',
-      estimated_hours: 1,
-      actual_hours: 1,
-      status: 'in_progress',
-      assigned_date: '2024-01-21T09:00:00Z',
-      started_date: '2024-01-21T10:00:00Z',
-      notes: 'Started work on window lock replacement',
-      materials_required: ['new window lock', 'screws', 'screwdriver'],
-      special_instructions: 'Test lock functionality after installation',
-      maintenance_request: {
-        id: 2,
-        title: 'Broken Window Lock',
-        description: 'The lock on the bedroom window is broken and won\'t secure properly.',
-        request_type: 'urgent',
-        priority: 'high',
-        premises_name: 'Sunset Gardens Apartments',
-        unit_number: '202',
-        tenant_first_name: 'Mike',
-        tenant_last_name: 'Johnson',
-        tenant_phone: '+1-555-0103',
-        estimated_cost: '75.00',
-      },
-    },
-    {
-      id: 3,
-      work_order_number: 'WO-2024-003',
-      work_description: 'Inspect and repair garbage disposal unit',
-      estimated_hours: 1.5,
-      status: 'assigned',
-      assigned_date: '2024-01-21T13:00:00Z',
-      materials_required: ['garbage disposal wrench', 'replacement parts if needed'],
-      special_instructions: 'Check for foreign objects that may be causing the jam',
-      maintenance_request: {
-        id: 4,
-        title: 'Garbage Disposal Jammed',
-        description: 'The garbage disposal is stuck and won\'t turn on.',
-        request_type: 'routine',
-        priority: 'medium',
-        premises_name: 'Riverside Townhomes',
-        unit_number: '1',
-        tenant_first_name: 'Alex',
-        tenant_last_name: 'Garcia',
-        tenant_phone: '+1-555-0107',
-        estimated_cost: '120.00',
-      },
-    },
-  ];
+
 
   useEffect(() => {
     loadWorkOrders();
-  }, []);
+  }, [filterStatus]);
 
   const loadWorkOrders = async () => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call
-      // const response = await fetch('/api/maintenance-requests?workman_id=' + user?.id);
-      // const data = await response.json();
       
-      // For now, use mock data
-      setWorkOrders(mockWorkOrders);
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl('/workman/work-orders'), {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { status: filterStatus === 'all' ? undefined : filterStatus }
+      });
+
+      if (response.data.status === 200) {
+        setWorkOrders(response.data.work_orders);
+      } else {
+        Alert.alert('Error', 'Failed to load work orders');
+      }
     } catch (error) {
       console.error('Error loading work orders:', error);
       Alert.alert('Error', 'Failed to load work orders');
@@ -178,41 +115,36 @@ const WorkmanMaintenanceScreen: React.FC = () => {
     if (!selectedWorkOrder) return;
 
     try {
-      // In a real app, this would be an API call
-      // await fetch(`/api/work-orders/${selectedWorkOrder.id}/status`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(statusUpdateData),
-      // });
-
-      // Update local state
-      const updatedWorkOrder = { ...selectedWorkOrder };
-      
-      if (statusUpdateData.status === 'in_progress' && !updatedWorkOrder.started_date) {
-        updatedWorkOrder.started_date = new Date().toISOString();
-      } else if (statusUpdateData.status === 'completed' && !updatedWorkOrder.completed_date) {
-        updatedWorkOrder.completed_date = new Date().toISOString();
-      }
-      
-      updatedWorkOrder.status = statusUpdateData.status;
-      updatedWorkOrder.notes = statusUpdateData.notes;
-      if (statusUpdateData.actual_hours) {
-        updatedWorkOrder.actual_hours = parseFloat(statusUpdateData.actual_hours);
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
       }
 
-      setWorkOrders(prev => 
-        prev.map(wo => wo.id === selectedWorkOrder.id ? updatedWorkOrder : wo)
+      const response = await axios.put(
+        getApiUrl(`/work-orders/${selectedWorkOrder.id}/status`),
+        statusUpdateData,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
 
-      setStatusUpdateModalVisible(false);
-      setSelectedWorkOrder(null);
-      setStatusUpdateData({
-        status: 'assigned',
-        notes: '',
-        actual_hours: '',
-      });
-      
-      Alert.alert('Success', 'Work order status updated successfully');
+      if (response.data.status === 200) {
+        // Refresh work orders to get updated data
+        await loadWorkOrders();
+        
+        setStatusUpdateModalVisible(false);
+        setSelectedWorkOrder(null);
+        setStatusUpdateData({
+          status: 'assigned',
+          notes: '',
+          actual_hours: '',
+        });
+        
+        Alert.alert('Success', 'Work order status updated successfully');
+      } else {
+        Alert.alert('Error', 'Failed to update work order status');
+      }
     } catch (error) {
       console.error('Error updating work order status:', error);
       Alert.alert('Error', 'Failed to update work order status');
@@ -272,6 +204,15 @@ const WorkmanMaintenanceScreen: React.FC = () => {
   const totalHours = workOrders.reduce((sum, wo) => sum + (wo.actual_hours || 0), 0);
   const estimatedHours = workOrders.reduce((sum, wo) => sum + wo.estimated_hours, 0);
   const efficiency = estimatedHours > 0 ? ((estimatedHours - totalHours) / estimatedHours) * 100 : 0;
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6200ee" />
+        <Text style={styles.loadingText}>Loading work orders...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -347,14 +288,14 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                     />
                     <View style={styles.workOrderTitleContainer}>
                       <Title style={styles.workOrderTitle}>
-                        {workOrder.maintenance_request.title}
+                        {workOrder.title}
                       </Title>
                       <Chip 
                         mode="outlined" 
-                        textStyle={{ color: getPriorityColor(workOrder.maintenance_request.priority) }}
-                        style={{ borderColor: getPriorityColor(workOrder.maintenance_request.priority) }}
+                        textStyle={{ color: getPriorityColor(workOrder.priority) }}
+                        style={{ borderColor: getPriorityColor(workOrder.priority) }}
                       >
-                        {workOrder.maintenance_request.priority}
+                        {workOrder.priority}
                       </Chip>
                     </View>
                   </View>
@@ -364,26 +305,26 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                       Work Order: {workOrder.work_order_number}
                     </Text>
                     <Paragraph style={styles.workOrderDescription}>
-                      {workOrder.work_description}
+                      {workOrder.description}
                     </Paragraph>
                     
                     <View style={styles.detailsGrid}>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="location-on" size={16} color="#666" />
                         <Text style={styles.detailText}>
-                          {workOrder.maintenance_request.premises_name} - Unit {workOrder.maintenance_request.unit_number}
+                          {workOrder.premises_name} - Unit {workOrder.unit_number}
                         </Text>
                       </View>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="person" size={16} color="#666" />
                         <Text style={styles.detailText}>
-                          {workOrder.maintenance_request.tenant_first_name} {workOrder.maintenance_request.tenant_last_name}
+                          {workOrder.tenant_first_name} {workOrder.tenant_last_name}
                         </Text>
                       </View>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="phone" size={16} color="#666" />
                         <Text style={styles.detailText}>
-                          {workOrder.maintenance_request.tenant_phone}
+                          {workOrder.tenant_phone}
                         </Text>
                       </View>
                       <View style={styles.detailItem}>
@@ -450,7 +391,7 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                     />
                     <View style={styles.workOrderTitleContainer}>
                       <Title style={styles.workOrderTitle}>
-                        {workOrder.maintenance_request.title}
+                        {workOrder.title}
                       </Title>
                       <Chip 
                         mode="outlined" 
@@ -467,14 +408,14 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                       Work Order: {workOrder.work_order_number}
                     </Text>
                     <Paragraph style={styles.workOrderDescription}>
-                      {workOrder.work_description}
+                      {workOrder.description}
                     </Paragraph>
                     
                     <View style={styles.detailsGrid}>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="location-on" size={16} color="#666" />
                         <Text style={styles.detailText}>
-                          {workOrder.maintenance_request.premises_name} - Unit {workOrder.maintenance_request.unit_number}
+                          {workOrder.premises_name} - Unit {workOrder.unit_number}
                         </Text>
                       </View>
                       <View style={styles.detailItem}>
@@ -542,7 +483,7 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                     />
                     <View style={styles.workOrderTitleContainer}>
                       <Title style={styles.workOrderTitle}>
-                        {workOrder.maintenance_request.title}
+                        {workOrder.title}
                       </Title>
                       <Chip 
                         mode="outlined" 
@@ -559,14 +500,14 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                       Work Order: {workOrder.work_order_number}
                     </Text>
                     <Paragraph style={styles.workOrderDescription}>
-                      {workOrder.work_description}
+                      {workOrder.description}
                     </Paragraph>
                     
                     <View style={styles.detailsGrid}>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="location-on" size={16} color="#666" />
                         <Text style={styles.detailText}>
-                          {workOrder.maintenance_request.premises_name} - Unit {workOrder.maintenance_request.unit_number}
+                          {workOrder.premises_name} - Unit {workOrder.unit_number}
                         </Text>
                       </View>
                       <View style={styles.detailItem}>
@@ -625,7 +566,7 @@ const WorkmanMaintenanceScreen: React.FC = () => {
           {selectedWorkOrder && (
             <View style={styles.selectedWorkOrderInfo}>
               <Text style={styles.selectedWorkOrderTitle}>
-                {selectedWorkOrder.maintenance_request.title}
+                {selectedWorkOrder.title}
               </Text>
               <Text style={styles.selectedWorkOrderNumber}>
                 {selectedWorkOrder.work_order_number}
@@ -691,6 +632,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   summaryCard: {
     margin: 16,
