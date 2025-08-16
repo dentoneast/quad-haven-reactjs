@@ -1,16 +1,16 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { 
-  Drawer, 
   DrawerContentScrollView, 
   DrawerItem, 
-  DrawerItemList,
-  useTheme,
+  DrawerItemList
+} from '@react-navigation/drawer';
+import { 
   Avatar,
   Title,
   Caption,
   Divider
-} from '@react-navigation/drawer';
+} from 'react-native-paper';
 import { 
   MaterialCommunityIcons,
   MaterialIcons,
@@ -21,12 +21,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { getAppName } from '../config/app';
 
 interface SideMenuProps {
-  props: any;
+  navigation: any;
 }
 
-const SideMenu: React.FC<SideMenuProps> = (props) => {
+const SideMenu: React.FC<SideMenuProps> = ({ navigation }) => {
   const { user, logout } = useAuth();
-  const theme = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -37,8 +36,8 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
   };
 
   return (
-    <View style={styles.container}>
-      <DrawerContentScrollView {...props}>
+            <View style={styles.container}>
+          <DrawerContentScrollView>
         {/* Header with user info */}
         <View style={styles.header}>
           <Avatar.Text 
@@ -127,6 +126,37 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
             </View>
 
             <Divider style={styles.divider} />
+
+            {/* Maintenance Management Section */}
+            <View style={styles.section}>
+              <Title style={styles.sectionTitle}>Maintenance Management</Title>
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="wrench" color={color} size={size} />
+                )}
+                label="Maintenance Requests"
+                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="clipboard-list" color={color} size={size} />
+                )}
+                label="Work Orders"
+                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="chart-line" color={color} size={size} />
+                )}
+                label="Maintenance Analytics"
+                onPress={() => props.navigation.navigate('LandlordMaintenance')}
+              />
+            </View>
+
+            <Divider style={styles.divider} />
           </>
         )}
 
@@ -151,12 +181,35 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
                 label="Rent Payments"
                 onPress={() => props.navigation.navigate('RentPayments')}
               />
+            </View>
+
+            <Divider style={styles.divider} />
+
+            {/* Tenant Maintenance Section */}
+            <View style={styles.section}>
+              <Title style={styles.sectionTitle}>Maintenance</Title>
               
               <DrawerItem
                 icon={({ color, size }) => (
                   <MaterialCommunityIcons name="wrench" color={color} size={size} />
                 )}
-                label="Maintenance Requests"
+                label="My Requests"
+                onPress={() => props.navigation.navigate('MaintenanceRequests')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="clipboard-check" color={color} size={size} />
+                )}
+                label="Request Status"
+                onPress={() => props.navigation.navigate('MaintenanceRequests')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="star" color={color} size={size} />
+                )}
+                label="Rate Completed Work"
                 onPress={() => props.navigation.navigate('MaintenanceRequests')}
               />
             </View>
@@ -181,9 +234,25 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
               
               <DrawerItem
                 icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="clipboard-list" color={color} size={size} />
+                )}
+                label="My Work Orders"
+                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
                   <MaterialCommunityIcons name="chart-line" color={color} size={size} />
                 )}
                 label="Performance Dashboard"
+                onPress={() => props.navigation.navigate('WorkmanMaintenance')}
+              />
+              
+              <DrawerItem
+                icon={({ color, size }) => (
+                  <MaterialCommunityIcons name="clock-outline" color={color} size={size} />
+                )}
+                label="Time Tracking"
                 onPress={() => props.navigation.navigate('WorkmanMaintenance')}
               />
             </View>
@@ -195,6 +264,22 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
         {/* General Section */}
         <View style={styles.section}>
           <Title style={styles.sectionTitle}>General</Title>
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="message-text" color={color} size={size} />
+            )}
+            label="Messages"
+            onPress={() => props.navigation.navigate('Messages')}
+          />
+          
+          <DrawerItem
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="wrench" color={color} size={size} />
+            )}
+            label="Maintenance Overview"
+            onPress={() => props.navigation.navigate('MaintenanceDashboard')}
+          />
           
           <DrawerItem
             icon={({ color, size }) => (

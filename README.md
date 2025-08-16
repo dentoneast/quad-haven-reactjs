@@ -336,6 +336,7 @@ rently/
 │       ├── MaintenanceRequestsScreen.tsx    # ✅ Tenant maintenance (COMPLETED)
 │       ├── LandlordMaintenanceScreen.tsx    # ✅ Landlord maintenance (COMPLETED)
 │       ├── WorkmanMaintenanceScreen.tsx     # ✅ Workman tasks (COMPLETED)
+│       ├── MaintenanceDashboardScreen.tsx   # ✅ Unified maintenance dashboard (NEW)
 │       ├── ConversationsScreen.tsx          # Chat list
 │       └── ChatScreen.tsx                   # Individual chat
 ├── scripts/               # Utility scripts
@@ -390,6 +391,14 @@ npm run server
 - **Progress Tracking**: Monitor time vs. estimated hours
 - **Detailed Information**: Access to maintenance request details, tenant info, and special instructions
 - **Notes System**: Add progress notes and completion details
+
+### **Unified Maintenance Dashboard** ✅ **NEW**
+- **Role-Based Views**: Different interfaces for landlords, tenants, and workmen
+- **Comprehensive Statistics**: Overview of maintenance requests and work orders
+- **Advanced Filtering**: Filter by status, type, and priority
+- **Real-time Data**: Live updates from backend APIs
+- **Unified Navigation**: Single entry point for all maintenance-related activities
+- **Responsive Design**: Adapts to different screen sizes and user roles
 
 ### **Tenant Maintenance Screen Features**
 - **Request Creation**: Submit new maintenance requests with type and priority
@@ -513,6 +522,13 @@ If you encounter "The action 'NAVIGATE' with payload was not handled by any navi
 - **Stack Screens**: Feature-specific screens (Maintenance, Premises, etc.) are in the main stack navigator
 - **Authentication**: Login/Register screens are in a separate auth stack
 
+#### 4. **Enhanced Side Menu Navigation**
+- **Landlord Section**: Rental management, maintenance management, and organization management
+- **Tenant Section**: My rentals, maintenance requests, and request status tracking
+- **Workman Section**: Work orders, performance dashboard, and time tracking
+- **General Section**: Messages and maintenance overview accessible to all users
+- **Role-Based Access**: Menu items dynamically show based on user type
+
 ## 🔒 Security Considerations
 
 - JWT tokens are stored securely using Expo Secure Store
@@ -597,6 +613,8 @@ For support and questions, please open an issue in the repository.
 - ✅ **Landlord Maintenance Creation**: Landlords can create and manage maintenance requests for organization properties
 - ✅ **Workman Task Management**: Complete work order workflow for workmen with real-time status updates
 - ✅ **Navigation System**: Complete navigation stack with all screens properly registered and accessible
+- ✅ **Comprehensive Maintenance CRUD Views**: Complete maintenance management interfaces for all user types
+- ✅ **Unified Maintenance Dashboard**: Role-based maintenance overview for landlords, tenants, and workmen
 
 ### **Planned Features**
 - Real-time notifications

@@ -201,9 +201,27 @@ const WorkmanMaintenanceScreen: React.FC = () => {
   const inProgressWorkOrders = filteredWorkOrders.filter(wo => wo.status === 'in_progress');
   const completedWorkOrders = filteredWorkOrders.filter(wo => wo.status === 'completed');
 
-  const totalHours = workOrders.reduce((sum, wo) => sum + (wo.actual_hours || 0), 0);
-  const estimatedHours = workOrders.reduce((sum, wo) => sum + wo.estimated_hours, 0);
-  const efficiency = estimatedHours > 0 ? ((estimatedHours - totalHours) / estimatedHours) * 100 : 0;
+  const totalHours = Math.max(0, workOrders.reduce((sum, wo) => {
+    const hours = parseFloat(String(wo.actual_hours || 0)) || 0;
+    return sum + (isNaN(hours) ? 0 : hours);
+  }, 0));
+  
+  const estimatedHours = Math.max(0, workOrders.reduce((sum, wo) => {
+    const hours = parseFloat(String(wo.estimated_hours || 0)) || 0;
+    return sum + (isNaN(hours) ? 0 : hours);
+  }, 0));
+  
+  const efficiency = estimatedHours > 0 ? Math.max(0, ((estimatedHours - totalHours) / estimatedHours) * 100) : 0;
+  
+  // Debug logging to help identify any calculation issues
+  console.log('WorkmanMaintenance Debug:', {
+    totalWorkOrders: workOrders.length,
+    totalHours,
+    estimatedHours,
+    efficiency,
+    hasActualHours: workOrders.some(wo => wo.actual_hours !== undefined && wo.actual_hours !== null),
+    hasEstimatedHours: workOrders.some(wo => wo.estimated_hours !== undefined && wo.estimated_hours !== null)
+  });
 
   if (loading) {
     return (
@@ -231,23 +249,23 @@ const WorkmanMaintenanceScreen: React.FC = () => {
                 <Text style={styles.summaryLabel}>Total Orders</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryNumber}>{totalHours.toFixed(1)}h</Text>
+                <Text style={styles.summaryNumber}>{(totalHours || 0).toFixed(1)}h</Text>
                 <Text style={styles.summaryLabel}>Hours Worked</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryNumber}>{efficiency.toFixed(1)}%</Text>
+                <Text style={styles.summaryNumber}>{(efficiency || 0).toFixed(1)}%</Text>
                 <Text style={styles.summaryLabel}>Efficiency</Text>
               </View>
             </View>
             <View style={styles.progressContainer}>
               <Text style={styles.progressLabel}>Time vs. Estimate</Text>
               <ProgressBar 
-                progress={Math.min(totalHours / estimatedHours, 1)} 
-                color={totalHours <= estimatedHours ? '#4CAF50' : '#F44336'}
+                progress={Math.min((totalHours || 0) / (estimatedHours || 1), 1)} 
+                color={(totalHours || 0) <= (estimatedHours || 0) ? '#4CAF50' : '#F44336'}
                 style={styles.progressBar}
               />
               <Text style={styles.progressText}>
-                {totalHours.toFixed(1)}h / {estimatedHours.toFixed(1)}h estimated
+                {(totalHours || 0).toFixed(1)}h / {(estimatedHours || 0).toFixed(1)}h estimated
               </Text>
             </View>
           </Card.Content>

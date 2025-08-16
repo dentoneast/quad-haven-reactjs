@@ -16,6 +16,7 @@ import RentPaymentsScreen from '../screens/RentPaymentsScreen';
 import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
 import LandlordMaintenanceScreen from '../screens/LandlordMaintenanceScreen';
 import WorkmanMaintenanceScreen from '../screens/WorkmanMaintenanceScreen';
+import MaintenanceDashboardScreen from '../screens/MaintenanceDashboardScreen';
 import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import ChatScreen from '../screens/ChatScreen';
@@ -127,6 +128,12 @@ const AppNavigator: React.FC = () => {
           />
           
           <Stack.Screen 
+            name="MaintenanceDashboard" 
+            component={MaintenanceDashboardScreen}
+            options={{ title: 'Maintenance Dashboard' }}
+          />
+          
+          <Stack.Screen 
             name="OrganizationManagement" 
             component={OrganizationManagementScreen}
             options={{ title: 'Organization Management' }}
@@ -159,6 +166,13 @@ const AppNavigator: React.FC = () => {
             name="MaintenanceRequests" 
             component={MaintenanceRequestsScreen}
             options={{ title: 'Maintenance Requests' }}
+          />
+          
+          {/* General Maintenance Screen for all users */}
+          <Stack.Screen 
+            name="GeneralMaintenance" 
+            component={MaintenanceRequestsScreen}
+            options={{ title: 'Maintenance' }}
           />
         </Stack.Navigator>
       ) : (

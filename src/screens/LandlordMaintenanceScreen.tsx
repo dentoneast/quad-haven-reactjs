@@ -24,6 +24,9 @@ import {
 } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import axios from 'axios';
+import { getApiUrl } from '../config/app';
+import * as SecureStore from 'expo-secure-store';
 
 interface MaintenanceRequest {
   id: number;
@@ -112,14 +115,18 @@ const LandlordMaintenanceScreen: React.FC = () => {
 
   const fetchPremises = async () => {
     try {
-      const response = await fetch(`/api/landlord/premises`, {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`,
-        },
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl('/landlord/premises'), {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setPremises(data.premises || []);
+
+      if (response.data.status === 200) {
+        setPremises(response.data.premises || []);
       }
     } catch (error) {
       console.error('Error fetching premises:', error);
@@ -128,14 +135,18 @@ const LandlordMaintenanceScreen: React.FC = () => {
 
   const fetchTenants = async () => {
     try {
-      const response = await fetch(`/api/landlord/tenants`, {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`,
-        },
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl('/landlord/tenants'), {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setTenants(data.tenants || []);
+
+      if (response.data.status === 200) {
+        setTenants(response.data.tenants || []);
       }
     } catch (error) {
       console.error('Error fetching tenants:', error);
@@ -148,14 +159,18 @@ const LandlordMaintenanceScreen: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch(`/api/rental-units?premises_id=${premisesId}`, {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`,
-        },
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+
+      const response = await axios.get(getApiUrl(`/rental-units?premises_id=${premisesId}`), {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setRentalUnits(data.rental_units || []);
+
+      if (response.data.status === 200) {
+        setRentalUnits(response.data.rental_units || []);
       }
     } catch (error) {
       console.error('Error fetching rental units:', error);
@@ -164,22 +179,23 @@ const LandlordMaintenanceScreen: React.FC = () => {
 
   const handleCreateRequest = async () => {
     try {
-      const response = await fetch('/api/landlord/maintenance-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({
-          ...createRequestData,
-          premises_id: parseInt(createRequestData.premises_id),
-          rental_unit_id: createRequestData.rental_unit_id ? parseInt(createRequestData.rental_unit_id) : undefined,
-          estimated_cost: createRequestData.estimated_cost ? parseFloat(createRequestData.estimated_cost) : undefined,
-          tenant_id: createRequestData.tenant_id ? parseInt(createRequestData.tenant_id) : undefined,
-        }),
+      const token = await SecureStore.getItemAsync('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+
+      const response = await axios.post(getApiUrl('/landlord/maintenance-requests'), {
+        ...createRequestData,
+        premises_id: parseInt(createRequestData.premises_id),
+        rental_unit_id: createRequestData.rental_unit_id ? parseInt(createRequestData.rental_unit_id) : undefined,
+        estimated_cost: createRequestData.estimated_cost ? parseFloat(createRequestData.estimated_cost) : undefined,
+        tenant_id: createRequestData.tenant_id ? parseInt(createRequestData.tenant_id) : undefined,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (response.ok) {
+      if (response.data.status === 200) {
         Alert.alert('Success', 'Maintenance request created successfully');
         setCreateRequestModalVisible(false);
         setCreateRequestData({
@@ -195,8 +211,7 @@ const LandlordMaintenanceScreen: React.FC = () => {
         // Refresh the maintenance requests list
         // fetchMaintenanceRequests();
       } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create maintenance request');
+        Alert.alert('Error', response.data.message || 'Failed to create maintenance request');
       }
     } catch (error) {
       console.error('Error creating maintenance request:', error);
