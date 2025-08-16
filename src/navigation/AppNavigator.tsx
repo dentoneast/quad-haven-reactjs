@@ -14,6 +14,8 @@ import LeaseManagementScreen from '../screens/LeaseManagementScreen';
 import MyLeasesScreen from '../screens/MyLeasesScreen';
 import RentPaymentsScreen from '../screens/RentPaymentsScreen';
 import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
+import LandlordMaintenanceScreen from '../screens/LandlordMaintenanceScreen';
+import WorkmanMaintenanceScreen from '../screens/WorkmanMaintenanceScreen';
 import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import ChatScreen from '../screens/ChatScreen';
@@ -110,6 +112,18 @@ const AppNavigator: React.FC = () => {
             name="LeaseManagement" 
             component={LeaseManagementScreen}
             options={{ title: 'Lease Management' }}
+          />
+          
+          <Stack.Screen 
+            name="LandlordMaintenance" 
+            component={LandlordMaintenanceScreen}
+            options={{ title: 'Maintenance Management' }}
+          />
+          
+          <Stack.Screen 
+            name="WorkmanMaintenance" 
+            component={WorkmanMaintenanceScreen}
+            options={{ title: 'Work Orders' }}
           />
           
           <Stack.Screen 

@@ -494,6 +494,25 @@ If you encounter "Network request failed" errors:
 - Use React Native Paper components for consistent UI
 - Implement proper error handling and loading states
 
+### **Navigation Issues**
+
+#### 1. **Screen Not Found Errors**
+If you encounter "The action 'NAVIGATE' with payload was not handled by any navigator" errors:
+
+- **Check Screen Registration**: Ensure all screens are properly imported and registered in `src/navigation/AppNavigator.tsx`
+- **Verify Screen Names**: Screen names in navigation calls must match exactly with registered screen names
+- **Restart Development Server**: After adding new screens, restart the server to ensure changes are loaded
+
+#### 2. **Missing Screen Components**
+- **Import Statements**: Verify all screen components are imported at the top of `AppNavigator.tsx`
+- **Screen Registration**: Add `<Stack.Screen>` entries for each new screen in the navigation stack
+- **Component Exports**: Ensure screen components are properly exported from their respective files
+
+#### 3. **Navigation Stack Structure**
+- **Main Tabs**: Core screens (Home, Messages, Search, Profile) are in the bottom tab navigator
+- **Stack Screens**: Feature-specific screens (Maintenance, Premises, etc.) are in the main stack navigator
+- **Authentication**: Login/Register screens are in a separate auth stack
+
 ## 🔒 Security Considerations
 
 - JWT tokens are stored securely using Expo Secure Store
@@ -577,6 +596,7 @@ For support and questions, please open an issue in the repository.
 - ✅ **Chat Messaging**: Real-time communication between users
 - ✅ **Landlord Maintenance Creation**: Landlords can create and manage maintenance requests for organization properties
 - ✅ **Workman Task Management**: Complete work order workflow for workmen with real-time status updates
+- ✅ **Navigation System**: Complete navigation stack with all screens properly registered and accessible
 
 ### **Planned Features**
 - Real-time notifications
