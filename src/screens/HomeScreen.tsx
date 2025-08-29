@@ -8,6 +8,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
+import { usePlatform } from '../hooks/usePlatform';
+import ResponsiveLayout from '../components/ResponsiveLayout';
+import { getResponsiveSpacing, getResponsivePadding, isDesktop } from '../utils/responsive';
 
 type RootStackParamList = {
   PremisesManagement: undefined;
@@ -43,22 +46,27 @@ const HomeScreen: React.FC = () => {
   const isLandlord = user?.user_type === 'landlord';
   const isWorkman = user?.user_type === 'workman';
 
+  const { isWeb } = usePlatform();
+
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <Surface style={styles.header}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.menuButton} onPress={openDrawer}>
-              <MaterialCommunityIcons name="menu" size={24} color="#6200ee" />
-            </TouchableOpacity>
-            <View style={styles.headerText}>
-              <Title style={styles.title}>Welcome to {getAppName()}</Title>
-              <Text style={styles.subtitle}>
-                Hello, {user?.first_name}! {isWorkman ? 'Ready to tackle today\'s work orders?' : 'Ready to find your next rental?'}
-              </Text>
-            </View>
-          </View>
-        </Surface>
+    <ResponsiveLayout>
+      <View style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          {!isWeb && (
+            <Surface style={styles.header}>
+              <View style={styles.headerContent}>
+                <TouchableOpacity style={styles.menuButton} onPress={openDrawer}>
+                  <MaterialCommunityIcons name="menu" size={24} color="#6200ee" />
+                </TouchableOpacity>
+                <View style={styles.headerText}>
+                  <Title style={styles.title}>Welcome to {getAppName()}</Title>
+                  <Text style={styles.subtitle}>
+                    Hello, {user?.first_name}! {isWorkman ? 'Ready to tackle today\'s work orders?' : 'Ready to find your next rental?'}
+                  </Text>
+                </View>
+              </View>
+            </Surface>
+          )}
 
         <Surface style={styles.section}>
           <Title style={styles.sectionTitle}>Quick Actions</Title>
@@ -308,6 +316,7 @@ const HomeScreen: React.FC = () => {
         </Modal>
       </Portal>
     </View>
+  </ResponsiveLayout>
   );
 };
 
@@ -347,9 +356,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   section: {
-    marginHorizontal: 16,
+    marginHorizontal: getResponsiveSpacing(16, 24, 32),
     marginBottom: 16,
-    padding: 16,
+    padding: getResponsiveSpacing(16, 20, 24),
     borderRadius: 8,
     elevation: 2,
   },

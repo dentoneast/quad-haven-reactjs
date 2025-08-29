@@ -7,13 +7,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "web:build": "expo export --platform web",
+    "web:serve": "npx serve web-build",
+    "deploy:web": "node scripts/deploy-web.js",
     "dev": "nodemon server/index.js",
     "server": "node server/index.js",
     "db:push": "node server/setup-db.js && node server/seed-db.js",
     "test-api": "node test-api.js",
     "test-landlord": "node test-landlord-maintenance.js",
     "test-user-role": "node test-user-role.js",
-
     "get-ip": "node scripts/get-ip.js",
     "update-app-name": "node scripts/update-app-name.js"
   },
@@ -40,7 +42,10 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-vector-icons": "^10.0.3"
+    "react-native-vector-icons": "^10.0.3",
+    "react-dom": "19.0.0",
+    "react-native-web": "^0.20.0",
+    "@expo/metro-runtime": "~5.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

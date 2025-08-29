@@ -94,6 +94,13 @@ A comprehensive React Native rental property management application with multi-t
 - Expo Secure Store for secure storage
 - TypeScript for type safety
 - Enhanced SideMenu with role-based navigation
+- **Dual Platform Support**: Mobile (iOS/Android) + Web (Responsive)
+
+### **Web Platform Features**
+- **Responsive Design**: Mobile-first with desktop optimization
+- **Platform-Specific Navigation**: Top navbar + sidebar for web, drawer + tabs for mobile
+- **Responsive Layouts**: Adaptive grids, spacing, and typography
+- **Web-Optimized UI**: Hover states, keyboard navigation, desktop interactions
 
 ### **Backend**
 - Node.js with Express.js
@@ -109,6 +116,11 @@ A comprehensive React Native rental property management application with multi-t
 - PostgreSQL (v12 or higher)
 - Expo CLI
 - React Native development environment
+
+### **Platform Support**
+This application supports **dual deployment**:
+- 📱 **Mobile**: React Native with Expo (iOS/Android)
+- 🌐 **Web**: Responsive web application with modern UI/UX
 
 ## 🚀 Installation
 
@@ -189,9 +201,50 @@ NODE_ENV=development
    
    The server will start and show connection information for different device types.
 
+4. **Choose Your Platform**
+   
+   **For Mobile Development:**
+   ```bash
+   npm start          # Start Expo development server
+   npm run android    # Run on Android
+   npm run ios        # Run on iOS
+   ```
+   
+   **For Web Development:**
+   ```bash
+   npm run web        # Start web development server
+   npm run web:build  # Build for production
+   npm run web:serve  # Test production build locally
+   ```
+
 ## 🏃‍♂️ Running the Application
 
-### 1. Start the backend server
+### **Mobile Development**
+```bash
+# Start Expo development server
+npm start
+
+# Run on specific platforms
+npm run android    # Android
+npm run ios        # iOS
+```
+
+### **Web Development**
+```bash
+# Start web development server
+npm run web
+
+# Build for production
+npm run web:build
+
+# Serve production build locally
+npm run web:serve
+
+# Deploy to web hosting
+npm run deploy:web
+```
+
+### **Backend Server**
 ```bash
 # Development mode with auto-reload
 npm run dev
@@ -613,6 +666,41 @@ If you encounter "The action 'NAVIGATE' with payload was not handled by any navi
 - **Root Cause**: Database schema was missing `organization_id` fields that the landlord endpoints required
 - **Solution**: Reset and recreate database using `npm run db:push` to ensure correct schema
 - **Status**: All landlord endpoints now working correctly with proper organization support
+
+## 🌐 Web Deployment
+
+### **Building for Web**
+```bash
+# Build production web version
+npm run web:build
+
+# Test production build locally
+npm run web:serve
+
+# Deploy to web hosting
+npm run deploy:web
+```
+
+### **Web Hosting Options**
+- **Netlify**: Drag and drop the `web-build` folder
+- **Vercel**: Connect your repository and deploy automatically
+- **Firebase Hosting**: Use Firebase CLI to deploy
+- **AWS S3 + CloudFront**: Static hosting with CDN
+- **GitHub Pages**: Deploy from your repository
+
+### **Web-Specific Features**
+- **Responsive Design**: Mobile-first with desktop optimization
+- **Platform Detection**: Automatic navigation switching (mobile vs web)
+- **Web Navigation**: Top navbar + collapsible sidebar
+- **Responsive Layouts**: Adaptive grids and spacing
+- **Web Optimizations**: Bundle splitting, lazy loading, performance
+
+### **Web Build Output**
+After running `npm run web:build`, you'll get:
+- `web-build/` folder with optimized static files
+- Minified JavaScript bundles
+- Optimized CSS and assets
+- Ready for any static hosting service
 
 ## 🤝 Contributing
 
