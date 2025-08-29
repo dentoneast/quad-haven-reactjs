@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import SideMenu from '../components/SideMenu';
 import LoginScreen from '../screens/LoginScreen';
@@ -44,31 +45,118 @@ const AuthStack = () => (
 
 const MainTabNavigator = () => (
   <Tab.Navigator
-    screenOptions={{
+    screenOptions={({ route }) => ({
+      tabBarHideOnKeyboard: true,
+      tabBarShowLabel: true,
+      tabBarActiveTintColor: '#6200ee',
+      tabBarInactiveTintColor: '#666666',
+      tabBarAllowFontScaling: false,
+      tabBarPressColor: '#e0e0e0',
+      tabBarPressOpacity: 0.7,
+      tabBarScrollEnabled: false,
+      tabBarLazy: true,
+      tabBarBadge: undefined,
+      tabBarIcon: ({ focused, color, size }) => {
+        let iconName: keyof typeof Ionicons.glyphMap;
+
+        try {
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Messages') {
+            iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+          } else if (route.name === 'Search') {
+            iconName = focused ? 'search' : 'search-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          } else {
+            iconName = 'help-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        } catch (error) {
+          // Fallback icon if there's any issue
+          return <Ionicons name="help-outline" size={size} color={color} />;
+        }
+      },
       tabBarActiveTintColor: '#6200ee',
       tabBarInactiveTintColor: 'gray',
       headerShown: false,
-    }}
+      tabBarStyle: {
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+        paddingBottom: 8,
+        paddingTop: 8,
+        height: 65,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+      },
+      tabBarItemStyle: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+      },
+      tabBarLabelStyle: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 2,
+        textAlign: 'center',
+      },
+      tabBarIconStyle: {
+        marginTop: 2,
+        marginBottom: 2,
+      },
+      tabBarBadgeStyle: {
+        backgroundColor: '#ff4444',
+        color: '#ffffff',
+        fontSize: 10,
+        fontWeight: 'bold',
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        lineHeight: 20,
+      },
+    })}
   >
     <Tab.Screen 
       name="Home" 
       component={HomeScreen}
-      options={{ title: 'Dashboard' }}
+      options={{ 
+        title: 'Dashboard',
+        tabBarAccessibilityLabel: 'Go to Dashboard',
+        tabBarTestID: 'home-tab',
+      }}
     />
-                    <Tab.Screen
-                  name="Messages"
-                  component={ConversationsScreen}
-                  options={{ title: 'Messages' }}
-                />
-                <Tab.Screen
-                  name="Search"
-                  component={HomeScreen}
-                  options={{ title: 'Search' }}
-                />
+    <Tab.Screen
+      name="Messages"
+      component={ConversationsScreen}
+      options={{ 
+        title: 'Messages',
+        tabBarAccessibilityLabel: 'View Messages',
+        tabBarTestID: 'messages-tab',
+      }}
+    />
+    <Tab.Screen
+      name="Search"
+      component={SearchRentalsScreen}
+      options={{ 
+        title: 'Search',
+        tabBarAccessibilityLabel: 'Search Rentals',
+        tabBarTestID: 'search-tab',
+      }}
+    />
     <Tab.Screen 
       name="Profile" 
       component={ProfileScreen}
-      options={{ title: 'Profile' }}
+      options={{ 
+        title: 'Profile',
+        tabBarAccessibilityLabel: 'View Profile',
+        tabBarTestID: 'profile-tab',
+      }}
     />
   </Tab.Navigator>
 );
