@@ -12,7 +12,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userType, setUserType] = useState('tenant');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  // const { register } = useAuth();
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -32,14 +32,15 @@ export default function RegisterScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      await register({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password,
-        user_type: userType,
-      });
-      // Navigation will be handled by the AppNavigator based on auth state
+      // await register({
+      //   first_name: firstName,
+      //   last_name: lastName,
+      //   email,
+      //   password,
+      //   user_type: userType,
+      // });
+      // Temporary: just show success message
+      Alert.alert('Success', 'Registration functionality will be implemented');
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
     } finally {

@@ -144,7 +144,8 @@ function MainDrawerNavigator() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
+  const isAuthenticated = false; // Temporary: always show login
 
   if (!isAuthenticated) {
     return (

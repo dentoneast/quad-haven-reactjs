@@ -8,7 +8,7 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  // const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -18,8 +18,9 @@ export default function LoginScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      await login(email, password);
-      // Navigation will be handled by the AppNavigator based on auth state
+      // await login(email, password);
+      // Temporary: just show success message
+      Alert.alert('Success', 'Login functionality will be implemented');
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login');
     } finally {

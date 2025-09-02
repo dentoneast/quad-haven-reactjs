@@ -171,6 +171,33 @@ SMTP_PASS=your_app_password
    npm run db:push
    ```
 
+## 👤 Test Users (Seed Data)
+
+After seeding the database, you can log in using the following accounts. All test users share the same password.
+
+- **Default password**: `password123`
+
+- **Tenants**:
+  - `john.doe@example.com`
+  - `mike.johnson@example.com`
+  - `david.brown@example.com`
+  - `alex.garcia@example.com`
+
+- **Landlords**:
+  - `jane.smith@example.com`
+  - `sarah.wilson@example.com`
+  - `emma.davis@example.com`
+  - `lisa.martinez@example.com`
+  - `rachel.taylor@example.com`
+
+- **Workman**:
+  - `tom.anderson@example.com`
+
+Notes:
+- Seed script source: `server/seed-db.js`
+- If users already exist, the seeder skips creating duplicates.
+- Roles are assigned via the `user_type` field in the seed data.
+
 ## 🚀 Deployment
 
 ### Web Application

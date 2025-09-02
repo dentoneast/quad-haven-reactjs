@@ -10,3 +10,6 @@ export { default as propertyService } from './api/property';
 
 // Hooks
 export { default as useAuth } from './hooks/useAuth';
+
+// Contexts
+export { AuthProvider, useAuthContext } from './src/contexts/AuthContext';
