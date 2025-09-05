@@ -13,6 +13,7 @@
     "lint": "echo \"No linting specified\""
   },
   "dependencies": {
+    "@babel/runtime": "^7.24.0",
     "axios": "^1.6.0",
     "zod": "^3.22.4",
     "zustand": "^4.4.6"
@@ -20,11 +21,8 @@
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@types/react": "^18.2.0",
-    "typescript": "^5.2.2",
-    "rimraf": "^5.0.5"
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
   },
   "publishConfig": {
     "access": "public"

@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, Title, Paragraph } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useAuth } from '@rently/shared';
+import { useAuth } from '@rently/shared';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // const { login } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -18,9 +18,7 @@ export default function LoginScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      // await login(email, password);
-      // Temporary: just show success message
-      Alert.alert('Success', 'Login functionality will be implemented');
+      await login({ email, password });
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login');
     } finally {

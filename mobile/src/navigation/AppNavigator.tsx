@@ -3,12 +3,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
-// import { useAuth } from '@rently/shared';
+import { useAuth } from '@rently/shared';
 
-// Import screens (these will need to be created)
+// Import screens
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import SearchScreen from '../screens/SearchScreen';
+import MessagesScreen from '../screens/MessagesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -64,7 +70,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Messages" 
-        component={HomeScreen} // Placeholder - will be replaced with actual MessagesScreen
+        component={MessagesScreen}
         options={{
           title: 'Messages',
           headerShown: false,
@@ -72,7 +78,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Search" 
-        component={HomeScreen} // Placeholder - will be replaced with actual SearchScreen
+        component={SearchScreen}
         options={{
           title: 'Search',
           headerShown: false,
@@ -80,7 +86,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Profile" 
-        component={HomeScreen} // Placeholder - will be replaced with actual ProfileScreen
+        component={ProfileScreen}
         options={{
           title: 'Profile',
           headerShown: false,
@@ -107,6 +113,30 @@ function MainStackNavigator() {
         name="MainTabs"
         component={MainTabNavigator}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{
+          title: 'Edit Profile',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{
+          title: 'Change Password',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          headerBackTitle: 'Back',
+        }}
       />
     </Stack.Navigator>
   );
@@ -144,8 +174,7 @@ function MainDrawerNavigator() {
 }
 
 export default function AppNavigator() {
-  // const { isAuthenticated } = useAuth();
-  const isAuthenticated = false; // Temporary: always show login
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return (

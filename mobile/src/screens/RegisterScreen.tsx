@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { TextInput, Button, Title, Paragraph, SegmentedButtons } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useAuth } from '@rently/shared';
+import { useAuth } from '@rently/shared';
 
 export default function RegisterScreen({ navigation }: any) {
   const [firstName, setFirstName] = useState('');
@@ -12,7 +12,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userType, setUserType] = useState('tenant');
   const [isLoading, setIsLoading] = useState(false);
-  // const { register } = useAuth();
+  const { register } = useAuth();
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -32,15 +32,13 @@ export default function RegisterScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      // await register({
-      //   first_name: firstName,
-      //   last_name: lastName,
-      //   email,
-      //   password,
-      //   user_type: userType,
-      // });
-      // Temporary: just show success message
-      Alert.alert('Success', 'Registration functionality will be implemented');
+      await register({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+        user_type: userType as any,
+      });
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
     } finally {
