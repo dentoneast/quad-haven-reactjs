@@ -13,7 +13,6 @@ const NetworkStatus: React.FC = () => {
       try {
         const response = await fetch('http://localhost:3001/api/health', {
           method: 'GET',
-          timeout: 5000,
         });
         const connected = response.ok;
         setIsConnected(connected);

@@ -20,7 +20,7 @@ export default function App() {
       <PaperProvider theme={theme}>
         <NavigationContainer>
           <StatusBar style="auto" />
-          <AppNavigator isAuthenticated={isAuthenticated} />
+          <AppNavigator />
         </NavigationContainer>
       </PaperProvider>
     </SafeAreaProvider>

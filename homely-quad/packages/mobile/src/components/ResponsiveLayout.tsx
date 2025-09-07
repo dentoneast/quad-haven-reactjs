@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { usePlatform } from '../hooks/usePlatform';
-import { getResponsivePadding, isDesktop } from '../utils/responsive';
+import { isDesktop } from '../utils/responsive';
 
 interface ResponsiveLayoutProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({ children, style }) 
 
   const containerStyle = [
     styles.container,
-    isWeb && isDesktop(width) && styles.desktopContainer,
+    isWeb && isDesktop() && styles.desktopContainer,
     style,
   ];
 

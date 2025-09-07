@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Title, Surface, Button, useTheme, FAB, Portal, Modal, List, Divider } from 'react-native-paper';
 import { useAuth } from '@homely-quad/shared';
-import { NetworkStatus } from '../components/NetworkStatus';
+import NetworkStatus from '../components/NetworkStatus';
 import { getAppName } from '../config/app';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
@@ -10,7 +10,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { usePlatform } from '../hooks/usePlatform';
 import ResponsiveLayout from '../components/ResponsiveLayout';
-import { getResponsiveSpacing, getResponsivePadding, isDesktop } from '../utils/responsive';
+import { isDesktop } from '../utils/responsive';
 
 type RootStackParamList = {
   PremisesManagement: undefined;
