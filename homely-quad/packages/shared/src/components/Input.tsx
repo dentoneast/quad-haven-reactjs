@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, TextInput, Text, View, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Platform, TextInput, Text, View, StyleSheet, ViewStyle, TextStyle, StyleProp } from 'react-native';
 
 export interface InputProps {
   label?: string;
@@ -38,23 +38,23 @@ export const Input: React.FC<InputProps> = ({
 
   const inputType = type === 'password' ? 'password' : type;
 
-  const containerStyle = [
+  const containerStyle: StyleProp<ViewStyle> = [
     styles.container,
     style,
   ];
 
-  const inputStyleCombined = [
+  const inputStyleCombined: StyleProp<TextStyle> = [
     styles.input,
     isFocused && styles.focused,
-    error && styles.error,
+    !!error && styles.error,
     disabled && styles.disabled,
     multiline && styles.multiline,
     inputStyle,
   ];
 
-  const labelStyle = [
+  const labelStyle: StyleProp<TextStyle> = [
     styles.label,
-    error && styles.errorText,
+    !!error && styles.errorText,
     required && styles.required,
   ];
 
