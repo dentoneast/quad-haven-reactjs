@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   transpilePackages: ['@homely-quad/shared'],
   webpack: (config) => {
     config.resolve.alias = {
@@ -12,7 +9,7 @@ const nextConfig = {
     return config;
   },
   env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+    CUSTOM_KEY: process.env.CUSTOM_KEY || '',
   },
 }
 

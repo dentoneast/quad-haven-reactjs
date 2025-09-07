@@ -8,6 +8,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        ring: 'hsl(222.2 47.4% 11.2%)',
+        background: '#ffffff',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
