@@ -4,14 +4,16 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@homely-quad/shared": ["../shared/src"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@homely-quad/shared": [
+        "../shared/src"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }

@@ -74,7 +74,7 @@ export class UserController {
   async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get all users from the database
-      const users = [];
+      const users: any[] = [];
 
       res.json({
         success: true,

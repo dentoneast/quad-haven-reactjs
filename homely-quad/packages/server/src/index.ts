@@ -9,7 +9,7 @@ dotenv.config();
 // Server configuration
 const SERVER_CONFIG = {
   APP_NAME: 'Homely Quad',
-  PORT: process.env.PORT || 3001,
+  PORT: Number(process.env.PORT) || 3001,
   HOST: '0.0.0.0',
   DB_CONFIG: {
     user: process.env.DB_USER || 'postgres',
@@ -23,7 +23,7 @@ const SERVER_CONFIG = {
 
 const app = express();
 const server = createServer(app);
-const PORT = SERVER_CONFIG.PORT;
+const PORT: number = SERVER_CONFIG.PORT;
 
 // Middleware
 app.use(cors());

@@ -214,7 +214,7 @@ export class PropertyController {
       }
 
       // In a real app, you would perform a database search
-      const mockResults = [];
+      const mockResults: any[] = [];
 
       res.json({
         success: true,
@@ -229,7 +229,7 @@ export class PropertyController {
   async getFeaturedProperties(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get featured properties from the database
-      const featuredProperties = [];
+      const featuredProperties: any[] = [];
 
       res.json({
         success: true,
@@ -261,7 +261,7 @@ export class PropertyController {
   async getFavorites(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get user's favorite properties from the database
-      const favorites = [];
+      const favorites: any[] = [];
 
       res.json({
         success: true,
@@ -299,7 +299,7 @@ export class PropertyController {
       const { ownerId } = req.params;
 
       // In a real app, you would get properties by owner from the database
-      const properties = [];
+      const properties: any[] = [];
 
       res.json({
         success: true,
@@ -314,7 +314,7 @@ export class PropertyController {
   async getAllProperties(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get all properties from the database
-      const properties = [];
+      const properties: any[] = [];
 
       res.json({
         success: true,

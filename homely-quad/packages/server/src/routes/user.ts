@@ -10,7 +10,7 @@ const userController = new UserController();
 const validateUserUpdate = [
   body('firstName').optional().trim().isLength({ min: 1 }),
   body('lastName').optional().trim().isLength({ min: 1 }),
-  body('phone').optional().isMobilePhone(),
+  body('phone').optional().isMobilePhone('any'),
   body('avatar').optional().isURL(),
 ];
 
