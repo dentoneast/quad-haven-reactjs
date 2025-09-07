@@ -1,57 +1,122 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
-import { Button, Input } from '@homely-quad/shared';
+import {
+  TextInput,
+  Button,
+  Text,
+  Title,
+  Surface,
+  useTheme,
+  SegmentedButtons,
+  Divider,
+} from 'react-native-paper';
 import { useAuth } from '@homely-quad/shared';
-import { RegisterData } from '@homely-quad/shared';
+import { useNavigation } from '@react-navigation/native';
 
-export default function RegisterScreen() {
-  const { register, error, clearError } = useAuth();
-  const [formData, setFormData] = useState<RegisterData>({
+const RegisterScreen: React.FC = () => {
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
+    phone: '',
+    dateOfBirth: '',
+    address: '',
+    userType: 'tenant',
   });
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const [organizationData, setOrganizationData] = useState({
+    name: '',
+    slug: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    website: '',
+    description: '',
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { register } = useAuth();
+  const navigation = useNavigation();
+  const theme = useTheme();
+
+  const isLandlord = formData.userType === 'landlord';
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleOrganizationChange = (field: string, value: string) => {
+    setOrganizationData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.email.trim() || !formData.password.trim() || 
+        !formData.firstName.trim() || !formData.lastName.trim()) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return false;
+    }
+
+    if (isLandlord) {
+      if (!organizationData.name.trim() || !organizationData.email.trim()) {
+        Alert.alert('Error', 'Please fill in organization details');
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleRegister = async () => {
-    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+    if (!validateForm()) return;
 
-    if (formData.password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      setLoading(true);
-      clearError();
-      await register(formData);
-    } catch (err) {
-      // Error is handled by the useAuth hook
+      const registerData = {
+        email: formData.email.trim(),
+        password: formData.password,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim() || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        address: formData.address.trim() || undefined,
+      };
+
+      await register(registerData);
+      // Navigation will be handled by the auth state change
+    } catch (error) {
+      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof RegisterData) => (value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const navigateToLogin = () => {
+    navigation.navigate('Login' as never);
   };
 
   return (
@@ -60,108 +125,291 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Homely Quad today</Text>
-        </View>
+        <Surface style={styles.surface} elevation={3}>
+          <Title style={[styles.title, { color: theme.colors.primary }]}>
+            Create Account
+          </Title>
+          <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
+            Join our rental management platform
+          </Text>
 
-        <View style={styles.form}>
-          <Input
-            label="First Name"
-            placeholder="Enter your first name"
-            value={formData.firstName}
-            onChangeText={handleInputChange('firstName')}
-            required
-          />
+          <View style={styles.form}>
+            {/* User Type Selection */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                I am a:
+              </Text>
+              <SegmentedButtons
+                value={formData.userType}
+                onValueChange={(value) => handleInputChange('userType', value)}
+                buttons={[
+                  { value: 'tenant', label: 'Tenant' },
+                  { value: 'landlord', label: 'Landlord' },
+                  { value: 'workman', label: 'Workman' },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
 
-          <Input
-            label="Last Name"
-            placeholder="Enter your last name"
-            value={formData.lastName}
-            onChangeText={handleInputChange('lastName')}
-            required
-          />
+            <Divider style={styles.divider} />
 
-          <Input
-            label="Email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChangeText={handleInputChange('email')}
-            type="email"
-            required
-            error={error}
-          />
+            {/* Basic Information */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                Basic Information
+              </Text>
+              
+              <View style={styles.row}>
+                <TextInput
+                  label="First Name *"
+                  value={formData.firstName}
+                  onChangeText={(value) => handleInputChange('firstName', value)}
+                  mode="outlined"
+                  style={[styles.input, styles.halfInput]}
+                  left={<TextInput.Icon icon="account" />}
+                />
+                <TextInput
+                  label="Last Name *"
+                  value={formData.lastName}
+                  onChangeText={(value) => handleInputChange('lastName', value)}
+                  mode="outlined"
+                  style={[styles.input, styles.halfInput]}
+                />
+              </View>
 
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={formData.password}
-            onChangeText={handleInputChange('password')}
-            type="password"
-            required
-          />
+              <TextInput
+                label="Email *"
+                value={formData.email}
+                onChangeText={(value) => handleInputChange('email', value)}
+                mode="outlined"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                style={styles.input}
+                left={<TextInput.Icon icon="email" />}
+              />
 
-          <Input
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            type="password"
-            required
-          />
+              <TextInput
+                label="Phone"
+                value={formData.phone}
+                onChangeText={(value) => handleInputChange('phone', value)}
+                mode="outlined"
+                keyboardType="phone-pad"
+                style={styles.input}
+                left={<TextInput.Icon icon="phone" />}
+              />
 
-          <Button
-            title="Create Account"
-            onPress={handleRegister}
-            loading={loading}
-            style={styles.registerButton}
-          />
+              <TextInput
+                label="Password *"
+                value={formData.password}
+                onChangeText={(value) => handleInputChange('password', value)}
+                mode="outlined"
+                secureTextEntry={!showPassword}
+                style={styles.input}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
+              />
 
-          <Button
-            title="Already have an account? Sign In"
-            onPress={() => {
-              // Navigate to login screen
-            }}
-            variant="ghost"
-            style={styles.loginButton}
-          />
-        </View>
+              <TextInput
+                label="Confirm Password *"
+                value={formData.confirmPassword}
+                onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                mode="outlined"
+                secureTextEntry={!showConfirmPassword}
+                style={styles.input}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                }
+              />
+
+              <TextInput
+                label="Address"
+                value={formData.address}
+                onChangeText={(value) => handleInputChange('address', value)}
+                mode="outlined"
+                multiline
+                numberOfLines={2}
+                style={styles.input}
+                left={<TextInput.Icon icon="map-marker" />}
+              />
+            </View>
+
+            {/* Organization Information for Landlords */}
+            {isLandlord && (
+              <>
+                <Divider style={styles.divider} />
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                    Organization Information
+                  </Text>
+
+                  <TextInput
+                    label="Organization Name *"
+                    value={organizationData.name}
+                    onChangeText={(value) => handleOrganizationChange('name', value)}
+                    mode="outlined"
+                    style={styles.input}
+                    left={<TextInput.Icon icon="office-building" />}
+                  />
+
+                  <TextInput
+                    label="Organization Email *"
+                    value={organizationData.email}
+                    onChangeText={(value) => handleOrganizationChange('email', value)}
+                    mode="outlined"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    style={styles.input}
+                    left={<TextInput.Icon icon="email" />}
+                  />
+
+                  <View style={styles.row}>
+                    <TextInput
+                      label="City"
+                      value={organizationData.city}
+                      onChangeText={(value) => handleOrganizationChange('city', value)}
+                      mode="outlined"
+                      style={[styles.input, styles.halfInput]}
+                      left={<TextInput.Icon icon="city" />}
+                    />
+                    <TextInput
+                      label="State"
+                      value={organizationData.state}
+                      onChangeText={(value) => handleOrganizationChange('state', value)}
+                      mode="outlined"
+                      style={[styles.input, styles.halfInput]}
+                    />
+                  </View>
+
+                  <TextInput
+                    label="Organization Description"
+                    value={organizationData.description}
+                    onChangeText={(value) => handleOrganizationChange('description', value)}
+                    mode="outlined"
+                    multiline
+                    numberOfLines={3}
+                    style={styles.input}
+                    left={<TextInput.Icon icon="text" />}
+                  />
+                </View>
+              </>
+            )}
+
+            <Button
+              mode="contained"
+              onPress={handleRegister}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.registerButton}
+              contentStyle={styles.buttonContent}
+            >
+              Create Account
+            </Button>
+
+            <View style={styles.loginContainer}>
+              <Text style={[styles.loginText, { color: theme.colors.onSurface }]}>
+                Already have an account?{' '}
+              </Text>
+              <Button
+                mode="text"
+                onPress={navigateToLogin}
+                style={styles.loginButton}
+                labelStyle={[styles.loginButtonText, { color: theme.colors.primary }]}
+              >
+                Sign In
+              </Button>
+            </View>
+          </View>
+        </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#f5f5f5',
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 20,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
+  surface: {
+    padding: 24,
+    borderRadius: 12,
+    marginHorizontal: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
+    textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6C757D',
+    textAlign: 'center',
+    marginBottom: 32,
   },
   form: {
-    width: '100%',
+    gap: 16,
+  },
+  section: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  segmentedButtons: {
+    marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  input: {
+    marginBottom: 8,
+  },
+  halfInput: {
+    flex: 1,
   },
   registerButton: {
-    marginTop: 20,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  loginText: {
+    fontSize: 16,
   },
   loginButton: {
-    marginTop: 16,
+    marginLeft: -8,
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
+
+export default RegisterScreen;

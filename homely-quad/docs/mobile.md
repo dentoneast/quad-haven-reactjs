@@ -2,7 +2,31 @@
 
 ## Overview
 
-The mobile application is built with React Native and Expo, providing a cross-platform solution for iOS and Android. It shares business logic and components with the web application through the shared package.
+The mobile application is built with React Native and Expo, providing a cross-platform solution for iOS and Android. It was migrated from the monolithic Rently Mobile application and now shares business logic and components with the web application through the shared package.
+
+## Key Features
+
+### Property Management
+- Multi-tenant property management
+- Premises and rental unit management
+- Lease tracking and management
+- Rental listings and search
+
+### Maintenance System
+- Maintenance request workflow
+- Work order management
+- Role-based maintenance dashboards
+- Photo and document management
+
+### Communication
+- Real-time messaging system
+- Conversation management
+- File sharing capabilities
+
+### User Management
+- Multi-role user system (tenant, landlord, workman, admin)
+- Authentication and authorization
+- Profile management
 
 ## Architecture
 
@@ -21,14 +45,41 @@ packages/mobile/
 ├── src/
 │   ├── screens/           # Screen components
 │   │   ├── auth/         # Authentication screens
+│   │   │   ├── LoginScreen.tsx
+│   │   │   └── RegisterScreen.tsx
 │   │   ├── HomeScreen.tsx
 │   │   ├── PropertiesScreen.tsx
-│   │   └── ...
+│   │   ├── PropertyDetailScreen.tsx
+│   │   ├── SearchScreen.tsx
+│   │   ├── FavoritesScreen.tsx
+│   │   ├── ProfileScreen.tsx
+│   │   ├── PremisesManagementScreen.tsx
+│   │   ├── RentalUnitsScreen.tsx
+│   │   ├── RentalListingsScreen.tsx
+│   │   ├── LeaseManagementScreen.tsx
+│   │   ├── MyLeasesScreen.tsx
+│   │   ├── RentPaymentsScreen.tsx
+│   │   ├── OrganizationManagementScreen.tsx
+│   │   ├── MaintenanceRequestsScreen.tsx
+│   │   ├── LandlordMaintenanceScreen.tsx
+│   │   ├── WorkmanMaintenanceScreen.tsx
+│   │   ├── MaintenanceDashboardScreen.tsx
+│   │   ├── ConversationsScreen.tsx
+│   │   ├── ChatScreen.tsx
+│   │   ├── SettingsScreen.tsx
+│   │   └── HelpSupportScreen.tsx
 │   ├── navigation/        # Navigation configuration
 │   │   └── AppNavigator.tsx
-│   ├── theme/            # Theme configuration
-│   │   └── index.ts
-│   └── components/       # Mobile-specific components
+│   ├── components/       # Mobile-specific components
+│   │   ├── SideMenu.tsx
+│   │   ├── NetworkStatus.tsx
+│   │   └── ResponsiveLayout.tsx
+│   ├── hooks/           # Mobile-specific hooks
+│   │   └── usePlatform.ts
+│   ├── utils/           # Mobile-specific utilities
+│   │   └── responsive.ts
+│   └── config/          # App configuration
+│       └── app.ts
 ├── assets/               # Images, fonts, etc.
 ├── app.json             # Expo configuration
 ├── metro.config.js      # Metro bundler configuration

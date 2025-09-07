@@ -1,5 +1,10 @@
 import { apiClient } from './client';
-import { AuthResponse, LoginCredentials, RegisterData, User } from '../types';
+import { LoginCredentials, RegisterData, User } from '../types';
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
 
 export class AuthService {
   private readonly basePath = '/auth';
@@ -16,40 +21,19 @@ export class AuthService {
     return apiClient.post<void>(`${this.basePath}/logout`);
   }
 
-  async refreshToken(refreshToken: string): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>(`${this.basePath}/refresh`, { refreshToken });
-  }
-
   async getCurrentUser(): Promise<User> {
     return apiClient.get<User>(`${this.basePath}/me`);
   }
 
-  async updateProfile(userId: string, data: Partial<User>): Promise<User> {
-    return apiClient.put<User>(`${this.basePath}/profile/${userId}`, data);
+  async updateProfile(data: Partial<User>): Promise<User> {
+    return apiClient.put<User>(`/user/profile`, data);
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/change-password`, {
-      userId,
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    return apiClient.put<void>(`/user/change-password`, {
       currentPassword,
       newPassword,
     });
-  }
-
-  async requestPasswordReset(email: string): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/forgot-password`, { email });
-  }
-
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/reset-password`, { token, newPassword });
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/verify-email`, { token });
-  }
-
-  async resendVerificationEmail(email: string): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/resend-verification`, { email });
   }
 }
 

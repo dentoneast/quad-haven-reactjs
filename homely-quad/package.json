@@ -39,7 +39,10 @@
     "clean:server": "cd packages/server && npm run clean",
     "analyze": "npm run analyze:web && npm run analyze:mobile",
     "analyze:web": "cd packages/web && npm run analyze",
-    "analyze:mobile": "cd packages/mobile && npm run analyze"
+    "analyze:mobile": "cd packages/mobile && npm run analyze",
+    "db:setup": "cd packages/server && npm run db:setup",
+    "db:seed": "cd packages/server && npm run db:seed",
+    "db:push": "cd packages/server && npm run db:push"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",

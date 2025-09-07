@@ -1,13 +1,14 @@
 # Deployment Guide
 
-This guide covers deploying the Homely Quad monorepo applications to various environments.
+This guide covers deploying the Homely Quad monorepo applications to various environments. The project was migrated from the monolithic Rently Mobile application into a scalable monorepo structure.
 
 ## Overview
 
-The Homely Quad monorepo consists of three main applications:
-- **Web App** - Next.js application
-- **Mobile App** - React Native/Expo application
-- **Backend Server** - Node.js/Express API server
+The Homely Quad monorepo consists of four main packages:
+- **Shared Package** - Common business logic, types, and utilities
+- **Web App** - Next.js responsive web application with public pages
+- **Mobile App** - React Native/Expo application (migrated from Rently Mobile)
+- **Backend Server** - Node.js/Express API server with PostgreSQL database
 
 ## Prerequisites
 
@@ -24,17 +25,12 @@ The Homely Quad monorepo consists of three main applications:
 ```env
 NODE_ENV=production
 PORT=3001
-DATABASE_URL=postgresql://username:password@host:port/database
+DB_USER=postgres
+DB_HOST=your-database-host
+DB_NAME=homely_quad
+DB_PASSWORD=your-database-password
+DB_PORT=5432
 JWT_SECRET=your-super-secret-jwt-key
-JWT_REFRESH_SECRET=your-super-secret-refresh-key
-ALLOWED_ORIGINS=https://homelyquad.com,https://app.homelyquad.com
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
 ```
 
 #### Web Environment
@@ -263,11 +259,14 @@ git push heroku main
 # Create database
 createdb homely_quad_production
 
-# Run migrations
-npm run db:migrate
+# Set up database tables
+npm run db:setup
 
-# Seed database
+# Seed database with sample data
 npm run db:seed
+
+# Or run both in one command
+npm run db:push
 ```
 
 ### MongoDB

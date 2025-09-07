@@ -1,159 +1,70 @@
-import { Platform as RNPlatform } from 'react-native';
+import { PlatformInfo, Platform } from '../types';
 
-export type Platform = 'web' | 'ios' | 'android';
-
-// Platform detection
-export function getPlatform(): Platform {
+// Platform detection utilities
+export const detectPlatform = (): PlatformInfo => {
+  // This will be implemented differently for web vs mobile
+  // For web, we can use window object
+  // For mobile, we'll use React Native's Platform
+  
   if (typeof window !== 'undefined') {
-    return 'web';
-  }
-  
-  if (RNPlatform.OS === 'ios') {
-    return 'ios';
-  }
-  
-  if (RNPlatform.OS === 'android') {
-    return 'android';
-  }
-  
-  return 'web';
-}
-
-export const isWeb = getPlatform() === 'web';
-export const isMobile = !isWeb;
-export const isIOS = getPlatform() === 'ios';
-export const isAndroid = getPlatform() === 'android';
-
-// Platform-specific utilities
-export function getPlatformConfig() {
-  const platform = getPlatform();
-  
-  switch (platform) {
-    case 'web':
-      return {
-        platform: 'web' as const,
-        apiBaseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
-        storageKey: 'homely_quad_web',
-        features: {
-          pushNotifications: false,
-          camera: true,
-          location: true,
-          biometrics: false,
-        },
-      };
-    
-    case 'ios':
-      return {
-        platform: 'ios' as const,
-        apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
-        storageKey: 'homely_quad_ios',
-        features: {
-          pushNotifications: true,
-          camera: true,
-          location: true,
-          biometrics: true,
-        },
-      };
-    
-    case 'android':
-      return {
-        platform: 'android' as const,
-        apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
-        storageKey: 'homely_quad_android',
-        features: {
-          pushNotifications: true,
-          camera: true,
-          location: true,
-          biometrics: true,
-        },
-      };
-    
-    default:
-      return {
-        platform: 'web' as const,
-        apiBaseUrl: 'http://localhost:3001/api',
-        storageKey: 'homely_quad_web',
-        features: {
-          pushNotifications: false,
-          camera: true,
-          location: true,
-          biometrics: false,
-        },
-      };
-  }
-}
-
-// Platform-specific imports
-export function requirePlatform<T>(
-  web: () => T,
-  mobile: () => T
-): T {
-  return isWeb ? web() : mobile();
-}
-
-// Platform-specific components
-export function PlatformComponent<T extends Record<string, any>>(props: {
-  web: React.ComponentType<T>;
-  mobile: React.ComponentType<T>;
-} & T) {
-  const { web: WebComponent, mobile: MobileComponent, ...rest } = props;
-  
-  if (isWeb) {
-    return <WebComponent {...(rest as T)} />;
-  }
-  
-  return <MobileComponent {...(rest as T)} />;
-}
-
-// Device info
-export function getDeviceInfo() {
-  if (isWeb) {
+    // Web platform
     return {
-      platform: 'web',
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      screenWidth: window.screen.width,
-      screenHeight: window.screen.height,
+      isWeb: true,
+      isMobile: false,
+      isIOS: false,
+      isAndroid: false,
+      platform: 'web'
     };
   }
   
+  // Default fallback (will be overridden in mobile)
   return {
-    platform: getPlatform(),
-    version: RNPlatform.Version,
-    isPad: RNPlatform.isPad,
-    isTVOS: RNPlatform.isTVOS,
+    isWeb: false,
+    isMobile: true,
+    isIOS: false,
+    isAndroid: true,
+    platform: 'android'
   };
-}
+};
 
-// Responsive breakpoints
-export const BREAKPOINTS = {
-  xs: 0,
-  sm: 576,
-  md: 768,
-  lg: 992,
-  xl: 1200,
-  xxl: 1400,
-} as const;
-
-export function getBreakpoint(): keyof typeof BREAKPOINTS {
-  if (isWeb && typeof window !== 'undefined') {
-    const width = window.innerWidth;
-    
-    if (width >= BREAKPOINTS.xxl) return 'xxl';
-    if (width >= BREAKPOINTS.xl) return 'xl';
-    if (width >= BREAKPOINTS.lg) return 'lg';
-    if (width >= BREAKPOINTS.md) return 'md';
-    if (width >= BREAKPOINTS.sm) return 'sm';
-    return 'xs';
-  }
+export const getPlatformConfig = (platform: Platform) => {
+  const configs = {
+    web: {
+      apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+      storageKey: 'homely_quad_web',
+      features: {
+        pushNotifications: false,
+        camera: true,
+        location: true,
+        biometrics: false,
+      },
+    },
+    ios: {
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
+      storageKey: 'homely_quad_ios',
+      features: {
+        pushNotifications: true,
+        camera: true,
+        location: true,
+        biometrics: true,
+      },
+    },
+    android: {
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
+      storageKey: 'homely_quad_android',
+      features: {
+        pushNotifications: true,
+        camera: true,
+        location: true,
+        biometrics: true,
+      },
+    },
+  };
   
-  return 'xs';
-}
+  return configs[platform];
+};
 
-export function isBreakpoint(breakpoint: keyof typeof BREAKPOINTS): boolean {
-  if (isWeb && typeof window !== 'undefined') {
-    return window.innerWidth >= BREAKPOINTS[breakpoint];
-  }
-  
-  return breakpoint === 'xs';
-}
+export default {
+  detectPlatform,
+  getPlatformConfig,
+};

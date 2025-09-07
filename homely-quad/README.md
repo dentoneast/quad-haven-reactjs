@@ -1,15 +1,41 @@
-# Homely Quad - Monorepo Architecture
+# Homely Quad - Rental Property Management Platform
 
-A comprehensive monorepo for React Native mobile, React web, and Node.js backend applications with shared business logic and components.
+A comprehensive monorepo for rental property management with React Native mobile, Next.js web, and Node.js backend applications. Migrated from the monolithic Rently Mobile application into a scalable, maintainable architecture.
 
 ## 🏗️ Architecture Overview
 
-This project demonstrates best practices for building a multi-platform application with:
+This project demonstrates best practices for building a multi-platform rental property management application with:
 
-- **React Native Mobile App** - Cross-platform mobile application
-- **React Web App** - Next.js web application
-- **Node.js Backend** - Express.js API server
-- **Shared Package** - Common business logic, types, and utilities
+- **React Native Mobile App** - Cross-platform mobile application for tenants, landlords, and maintenance workers
+- **Next.js Web App** - Responsive web application with public pages and authenticated features
+- **Node.js Backend** - Express.js API server with PostgreSQL database
+- **Shared Package** - Common business logic, types, and utilities across all platforms
+
+## 🏠 Key Features
+
+### Property Management
+- Multi-tenant property management
+- Premises and rental unit management
+- Lease tracking and management
+- Rental listings and search
+
+### Maintenance System
+- Maintenance request workflow
+- Work order management
+- Role-based maintenance dashboards
+- Photo and document management
+
+### Communication
+- Real-time messaging system
+- Conversation management
+- File sharing capabilities
+- Notification system
+
+### User Management
+- Multi-role user system (tenant, landlord, workman, admin)
+- Authentication and authorization
+- Profile management
+- Organization management
 
 ## 📁 Project Structure
 
@@ -52,6 +78,7 @@ homely-quad/
 
 - Node.js 18+ 
 - npm 9+
+- PostgreSQL 12+
 - Expo CLI (for mobile development)
 - Git
 
@@ -68,7 +95,16 @@ homely-quad/
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Set up database**
+   ```bash
+   # Set up PostgreSQL database
+   createdb homely_quad
+   
+   # Set up database tables and seed data
+   npm run db:push
+   ```
+
+4. **Set up environment variables**
    ```bash
    # Copy environment files
    cp packages/server/env.example packages/server/.env
@@ -76,7 +112,7 @@ homely-quad/
    cp packages/mobile/env.example packages/mobile/.env
    ```
 
-4. **Build shared package**
+5. **Build shared package**
    ```bash
    npm run build:shared
    ```
@@ -192,41 +228,63 @@ npm run dev
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/logout` - User logout
 - `GET /api/auth/me` - Get current user
-- `PUT /api/auth/profile` - Update user profile
 
-#### Properties
-- `GET /api/properties` - Get all properties
-- `GET /api/properties/:id` - Get property by ID
-- `POST /api/properties` - Create property (authenticated)
-- `PUT /api/properties/:id` - Update property (authenticated)
-- `DELETE /api/properties/:id` - Delete property (authenticated)
-- `GET /api/properties/featured` - Get featured properties
-- `POST /api/properties/search` - Search properties
+#### Property Management
+- `GET /api/premises` - Get all premises
+- `POST /api/premises` - Create premises (landlord)
+- `GET /api/rental-units` - Get rental units
+- `POST /api/rental-units` - Create rental unit (landlord)
+- `GET /api/rental-listings` - Get rental listings
+- `POST /api/rental-listings` - Create rental listing (landlord)
+- `GET /api/leases` - Get leases
+- `POST /api/leases` - Create lease (landlord)
 
-#### Users
-- `GET /api/users/profile` - Get user profile (authenticated)
-- `PUT /api/users/profile` - Update user profile (authenticated)
-- `DELETE /api/users/profile` - Delete user profile (authenticated)
+#### Maintenance System
+- `GET /api/maintenance-requests` - Get maintenance requests
+- `POST /api/maintenance-requests` - Create maintenance request (tenant)
+- `PUT /api/maintenance-requests/:id/approve` - Approve request (landlord)
+- `PUT /api/maintenance-requests/:id/reject` - Reject request (landlord)
+- `GET /api/work-orders` - Get work orders (workman)
+- `POST /api/maintenance-requests/:id/assign` - Assign work order (landlord)
+
+#### Communication
+- `GET /api/conversations` - Get conversations
+- `POST /api/conversations` - Create conversation
+- `GET /api/conversations/:id/messages` - Get messages
+- `POST /api/conversations/:id/messages` - Send message
+
+#### Health Check
+- `GET /api/health` - Server health status
 
 ## 🔧 Shared Package
 
 The shared package contains common business logic used across all applications:
 
 ### API Services
-- `authService` - Authentication operations
-- `propertyService` - Property management
+- `authService` - Authentication operations (login, register, logout, profile)
+- `propertyService` - Property management (premises, rental units, leases, listings)
+- `maintenanceService` - Maintenance system (requests, work orders, approvals)
+- `chatService` - Communication (conversations, messages)
 - `apiClient` - HTTP client with interceptors
 
+### Types & Interfaces
+- `User` - User types (tenant, landlord, workman, admin)
+- `Premises` - Property premises management
+- `RentalUnit` - Individual rental units
+- `Lease` - Lease agreements
+- `MaintenanceRequest` - Maintenance request workflow
+- `Conversation` - Chat and messaging
+
 ### Hooks
-- `useAuth` - Authentication state management
-- `useApi` - API call management
-- `useApiMutation` - API mutation management
+- `useAuth` - Authentication state management with login, register, logout
+- `usePlatform` - Platform detection (web, iOS, Android)
 
 ### Utilities
 - `validation` - Form validation schemas
 - `formatting` - Data formatting functions
 - `storage` - Platform-agnostic storage
 - `platform` - Platform detection utilities
+- `responsive` - Responsive design utilities
 
 ### Components
 - `Button` - Cross-platform button component
@@ -281,10 +339,12 @@ npm run lint:server
 ```env
 NODE_ENV=development
 PORT=3001
-DATABASE_URL=postgresql://username:password@localhost:5432/homely_quad
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=homely_quad
+DB_PASSWORD=password
+DB_PORT=5432
 JWT_SECRET=your-super-secret-jwt-key-here
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:19006
 ```
 
 ### Web (.env.local)
@@ -402,6 +462,35 @@ For support and questions:
 - Check the documentation
 - Review existing issues and discussions
 
+## 📋 Migration from Rently Mobile
+
+This project was migrated from the monolithic Rently Mobile application into a scalable monorepo architecture. The migration includes:
+
+### ✅ What Was Migrated
+- **Complete Database Schema** - All tables and relationships from PostgreSQL
+- **All Mobile Screens** - Every screen from the original mobile app
+- **Backend API** - Full Express.js server with authentication and business logic
+- **Business Logic** - Shared types, utilities, and API services
+- **User Roles** - Tenant, landlord, workman, and admin functionality
+
+### 🆕 What Was Added
+- **Responsive Web Application** - Modern Next.js website with public pages
+- **Enhanced UI Components** - Radix UI components for web
+- **Improved Architecture** - Monorepo structure with shared packages
+- **Better Type Safety** - Comprehensive TypeScript implementation
+- **Modern Tooling** - Updated dependencies and development tools
+
+### 📁 Original vs New Structure
+```
+rently-mobile/                 →    homely-quad/
+├── src/                      →    ├── packages/
+│   ├── screens/              →    │   ├── mobile/src/screens/
+│   ├── components/           →    │   ├── shared/src/components/
+│   └── contexts/             →    │   └── shared/src/hooks/
+├── server/                   →    └── packages/server/src/
+└── package.json              →    └── packages/*/package.json
+```
+
 ## 🔄 Version History
 
 - **v1.0.0** - Initial release with basic functionality
@@ -409,6 +498,7 @@ For support and questions:
   - Next.js web app
   - Express.js backend
   - Shared package with common logic
+  - Migrated from Rently Mobile monolithic app
 
 ---
 

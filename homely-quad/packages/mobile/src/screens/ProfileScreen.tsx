@@ -1,137 +1,201 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Title, Surface, Button, useTheme, List, Avatar, Divider } from 'react-native-paper';
 import { useAuth } from '@homely-quad/shared';
-import { Button } from '@homely-quad/shared';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function ProfileScreen() {
+const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const theme = useTheme();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: logout },
-      ]
-    );
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
-  const menuItems = [
-    { title: 'Edit Profile', onPress: () => {} },
-    { title: 'My Properties', onPress: () => {} },
-    { title: 'Settings', onPress: () => {} },
-    { title: 'Help & Support', onPress: () => {} },
-    { title: 'About', onPress: () => {} },
-  ];
+  const getRoleIcon = () => {
+    switch (user?.user_type) {
+      case 'landlord':
+        return '🏢';
+      case 'workman':
+        return '🔧';
+      case 'admin':
+        return '👑';
+      default:
+        return '🏠';
+    }
+  };
+
+  const getRoleColor = () => {
+    switch (user?.user_type) {
+      case 'landlord':
+        return '#4CAF50';
+      case 'workman':
+        return '#FF9800';
+      case 'admin':
+        return '#9C27B0';
+      default:
+        return '#2196F3';
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-          </Text>
+      <Surface style={[styles.header, { backgroundColor: theme.colors.primary }]} elevation={2}>
+        <View style={styles.profileInfo}>
+          <Avatar.Text 
+            size={80} 
+            label={getInitials(user?.first_name || '', user?.last_name || '')}
+            style={[styles.avatar, { backgroundColor: theme.colors.onPrimary }]}
+          />
+          <Title style={[styles.userName, { color: theme.colors.onPrimary }]}>
+            {user?.first_name} {user?.last_name}
+          </Title>
+          <View style={styles.roleContainer}>
+            <Text style={[styles.roleIcon, { color: getRoleColor() }]}>
+              {getRoleIcon()}
+            </Text>
+            <Text style={[styles.roleText, { color: theme.colors.onPrimary }]}>
+              {user?.user_type?.charAt(0).toUpperCase()}{user?.user_type?.slice(1)}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.name}>
-          {user?.firstName} {user?.lastName}
-        </Text>
-        <Text style={styles.email}>{user?.email}</Text>
-      </View>
+      </Surface>
 
-      <View style={styles.menu}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            onPress={item.onPress}
-          >
-            <Text style={styles.menuItemText}>{item.title}</Text>
-            <Text style={styles.menuItemArrow}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <View style={styles.content}>
+        <Surface style={[styles.section, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <List.Section>
+            <List.Subheader>Account Information</List.Subheader>
+            <List.Item
+              title="Email"
+              description={user?.email}
+              left={(props) => <List.Icon {...props} icon="email" />}
+            />
+            <Divider />
+            <List.Item
+              title="Phone"
+              description={user?.phone || 'Not provided'}
+              left={(props) => <List.Icon {...props} icon="phone" />}
+            />
+            <Divider />
+            <List.Item
+              title="Address"
+              description={user?.address || 'Not provided'}
+              left={(props) => <List.Icon {...props} icon="map-marker" />}
+            />
+            <Divider />
+            <List.Item
+              title="Member Since"
+              description={user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+              left={(props) => <List.Icon {...props} icon="calendar" />}
+            />
+          </List.Section>
+        </Surface>
 
-      <View style={styles.logoutSection}>
+        <Surface style={[styles.section, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <List.Section>
+            <List.Subheader>Account Actions</List.Subheader>
+            <List.Item
+              title="Edit Profile"
+              description="Update your personal information"
+              left={(props) => <List.Icon {...props} icon="account-edit" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            />
+            <Divider />
+            <List.Item
+              title="Change Password"
+              description="Update your password"
+              left={(props) => <List.Icon {...props} icon="lock-reset" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            />
+            <Divider />
+            <List.Item
+              title="Notifications"
+              description="Manage notification preferences"
+              left={(props) => <List.Icon {...props} icon="bell" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            />
+          </List.Section>
+        </Surface>
+
+        <Surface style={[styles.section, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <List.Section>
+            <List.Subheader>Support</List.Subheader>
+            <List.Item
+              title="Help & Support"
+              description="Get help and contact support"
+              left={(props) => <List.Icon {...props} icon="help-circle" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            />
+            <Divider />
+            <List.Item
+              title="About"
+              description="App version and information"
+              left={(props) => <List.Icon {...props} icon="information" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            />
+          </List.Section>
+        </Surface>
+
         <Button
-          title="Logout"
-          onPress={handleLogout}
-          variant="outline"
-          style={styles.logoutButton}
-        />
+          mode="contained"
+          onPress={logout}
+          style={[styles.logoutButton, { backgroundColor: theme.colors.error }]}
+          contentStyle={styles.logoutButtonContent}
+        >
+          Sign Out
+        </Button>
       </View>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    paddingVertical: 32,
+    paddingTop: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
   },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
+  profileInfo: {
     alignItems: 'center',
+  },
+  avatar: {
     marginBottom: 16,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  name: {
+  userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  email: {
-    fontSize: 16,
-    color: '#6C757D',
-  },
-  menu: {
-    backgroundColor: '#FFFFFF',
-    marginTop: 16,
-  },
-  menuItem: {
+  roleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
-  menuItemText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  menuItemArrow: {
+  roleIcon: {
     fontSize: 20,
-    color: '#6C757D',
+    marginRight: 8,
   },
-  logoutSection: {
+  roleText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  content: {
     padding: 20,
-    marginTop: 16,
+  },
+  section: {
+    marginBottom: 16,
+    borderRadius: 12,
   },
   logoutButton: {
-    borderColor: '#FF3B30',
+    marginTop: 24,
+    paddingVertical: 8,
+  },
+  logoutButtonContent: {
+    paddingVertical: 8,
   },
 });
+
+export default ProfileScreen;

@@ -2,7 +2,25 @@
 
 ## Overview
 
-The web application is built with Next.js 14 and React, providing a modern, server-side rendered web experience. It shares business logic and components with the mobile application through the shared package.
+The web application is built with Next.js 14 and React, providing a modern, responsive web experience with public pages and authenticated features. It was created as part of the migration from the monolithic Rently Mobile application and shares business logic and components with the mobile application through the shared package.
+
+## Key Features
+
+### Public Pages
+- **Homepage** - Marketing page with features, pricing, and call-to-action
+- **Authentication** - Login and registration pages
+- **Marketing Content** - About, contact, pricing, and features pages
+
+### Authenticated Features
+- **Property Management** - Multi-tenant property management
+- **Maintenance System** - Request workflow and work order management
+- **Communication** - Real-time messaging and conversation management
+- **User Management** - Profile management and role-based access
+
+### Responsive Design
+- **Desktop-First** - Optimized for desktop with mobile adaptation
+- **Mobile Responsive** - Seamless experience across all devices
+- **Modern UI** - Clean, professional design with Tailwind CSS
 
 ## Architecture
 
@@ -22,12 +40,23 @@ packages/web/
 ├── src/
 │   ├── app/                # Next.js App Router
 │   │   ├── layout.tsx      # Root layout
-│   │   ├── page.tsx        # Home page
+│   │   ├── page.tsx        # Home page (marketing)
 │   │   ├── globals.css     # Global styles
-│   │   └── (auth)/         # Auth route group
+│   │   ├── login/          # Login page
+│   │   │   └── page.tsx
+│   │   └── register/       # Registration page
+│   │       └── page.tsx
 │   ├── components/         # Web-specific components
-│   ├── lib/               # Utility functions
-│   └── styles/            # Additional styles
+│   │   └── ui/            # UI component library
+│   │       ├── button.tsx
+│   │       ├── input.tsx
+│   │       ├── card.tsx
+│   │       ├── badge.tsx
+│   │       ├── alert.tsx
+│   │       ├── label.tsx
+│   │       └── select.tsx
+│   └── lib/               # Utility functions
+│       └── utils.ts
 ├── public/                # Static assets
 ├── next.config.js         # Next.js configuration
 ├── tailwind.config.js     # Tailwind configuration

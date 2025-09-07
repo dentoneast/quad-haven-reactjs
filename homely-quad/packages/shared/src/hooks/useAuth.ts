@@ -12,6 +12,7 @@ interface UseAuthReturn {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -93,7 +94,7 @@ export const useAuth = (): UseAuthReturn => {
       setIsLoading(true);
       setError(null);
       
-      const updatedUser = await authService.updateProfile(user.id, userData);
+      const updatedUser = await authService.updateProfile(userData);
       
       // Update stored user data
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -105,6 +106,20 @@ export const useAuth = (): UseAuthReturn => {
       setIsLoading(false);
     }
   }, [user]);
+
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      await authService.changePassword(currentPassword, newPassword);
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Initialize auth state on mount
   useEffect(() => {
@@ -146,6 +161,7 @@ export const useAuth = (): UseAuthReturn => {
     register,
     logout,
     updateUser,
+    changePassword,
     clearError,
   };
 };

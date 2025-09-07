@@ -1,21 +1,21 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Homely Quad - Find Your Perfect Home',
-  description: 'Discover and rent the perfect property with Homely Quad. Browse thousands of properties, save favorites, and connect with property owners.',
-  keywords: 'rental, property, apartment, house, real estate, homely quad',
+  title: 'Homely Quad - Rental Property Management',
+  description: 'Comprehensive rental property management platform for landlords, tenants, and maintenance teams.',
+  keywords: ['rental', 'property management', 'landlord', 'tenant', 'maintenance'],
   authors: [{ name: 'Homely Quad Team' }],
   viewport: 'width=device-width, initial-scale=1',
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
@@ -23,5 +23,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  )
+  );
 }

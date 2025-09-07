@@ -1,224 +1,424 @@
-'use client';
-
-import { useState } from 'react';
-import { Button, Input } from '@homely-quad/shared';
-import { useAuth } from '@homely-quad/shared';
-import { formatCurrency } from '@homely-quad/shared';
 import Link from 'next/link';
-
-// Mock data - in a real app, this would come from your API
-const featuredProperties = [
-  {
-    id: '1',
-    title: 'Modern Apartment in Downtown',
-    price: 2500,
-    currency: 'USD',
-    location: 'New York, NY',
-    image: 'https://via.placeholder.com/400x300',
-    bedrooms: 2,
-    bathrooms: 2,
-  },
-  {
-    id: '2',
-    title: 'Cozy House with Garden',
-    price: 1800,
-    currency: 'USD',
-    location: 'San Francisco, CA',
-    image: 'https://via.placeholder.com/400x300',
-    bedrooms: 3,
-    bathrooms: 2,
-  },
-  {
-    id: '3',
-    title: 'Luxury Condo with Pool',
-    price: 3500,
-    currency: 'USD',
-    location: 'Miami, FL',
-    image: 'https://via.placeholder.com/400x300',
-    bedrooms: 2,
-    bathrooms: 3,
-  },
-];
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Building2, 
+  Users, 
+  Wrench, 
+  MessageSquare, 
+  Shield, 
+  Zap,
+  CheckCircle,
+  ArrowRight,
+  Star
+} from 'lucide-react';
 
 export default function HomePage() {
-  const { isAuthenticated, user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">Homely Quad</h1>
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">Homely Quad</span>
             </div>
-            <nav className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-700">Welcome, {user?.firstName}</span>
-                  <Button variant="outline" size="sm">Profile</Button>
-                  <Button variant="ghost" size="sm">Logout</Button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  <Link href="/login">
-                    <Button variant="ghost" size="sm">Login</Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button size="sm">Sign Up</Button>
-                  </Link>
-                </div>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Find Your Perfect Home
-          </h2>
-          <p className="text-xl md:text-2xl mb-8 text-primary-100">
-            Discover thousands of properties and connect with property owners
-          </p>
-          
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Input
-                placeholder="Search by location, property type, or features..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                className="flex-1"
-              />
-              <Button size="lg" className="px-8">
-                Search Properties
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="#features" className="text-gray-600 hover:text-gray-900">Features</Link>
+              <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
+              <Link href="#about" className="text-gray-600 hover:text-gray-900">About</Link>
+              <Link href="#contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">Get Started</Link>
               </Button>
             </div>
           </div>
         </div>
-      </section>
+      </nav>
 
-      {/* Featured Properties */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-3xl font-bold text-gray-900 mb-12 text-center">
-            Featured Properties
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map((property) => (
-              <div key={property.id} className="card hover:shadow-lg transition-shadow">
-                <div className="aspect-w-16 aspect-h-9">
-                  <img
-                    src={property.image}
-                    alt={property.title}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
-                </div>
-                <div className="card-content">
-                  <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                    {property.title}
-                  </h4>
-                  <p className="text-gray-600 mb-4">{property.location}</p>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-bold text-primary-600">
-                      {formatCurrency(property.price, property.currency)}
-                    </span>
-                    <div className="text-sm text-gray-500">
-                      {property.bedrooms} bed • {property.bathrooms} bath
-                    </div>
-                  </div>
-                  <Button className="w-full">View Details</Button>
-                </div>
-              </div>
-            ))}
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Modern Rental Property
+            <span className="text-blue-600"> Management</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Streamline your rental property operations with our comprehensive platform. 
+            Manage properties, tenants, maintenance, and more from one place.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <Link href="/register">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="#demo">Watch Demo</Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-3xl font-bold text-gray-900 mb-12 text-center">
-            Why Choose Homely Quad?
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Smart Search</h4>
-              <p className="text-gray-600">
-                Find properties that match your exact requirements with our advanced search filters.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Save Favorites</h4>
-              <p className="text-gray-600">
-                Keep track of properties you love and easily compare them side by side.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h4 className="text-xl font-semibold text-gray-900 mb-2">Direct Contact</h4>
-              <p className="text-gray-600">
-                Connect directly with property owners and get answers to your questions quickly.
-              </p>
-            </div>
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Everything You Need to Manage Properties
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Our platform provides all the tools you need to efficiently manage rental properties, 
+              tenants, and maintenance requests.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="p-6">
+              <CardHeader>
+                <Building2 className="h-12 w-12 text-blue-600 mb-4" />
+                <CardTitle>Property Management</CardTitle>
+                <CardDescription>
+                  Manage multiple properties, units, and listings from a single dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Property listings
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Unit management
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Lease tracking
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardHeader>
+                <Users className="h-12 w-12 text-green-600 mb-4" />
+                <CardTitle>Tenant Portal</CardTitle>
+                <CardDescription>
+                  Give tenants easy access to their lease information and maintenance requests.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Online rent payments
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Maintenance requests
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Document access
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardHeader>
+                <Wrench className="h-12 w-12 text-orange-600 mb-4" />
+                <CardTitle>Maintenance System</CardTitle>
+                <CardDescription>
+                  Streamline maintenance requests and work order management.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Request tracking
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Work order management
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Vendor coordination
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardHeader>
+                <MessageSquare className="h-12 w-12 text-purple-600 mb-4" />
+                <CardTitle>Communication</CardTitle>
+                <CardDescription>
+                  Built-in messaging system for seamless communication between all parties.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Direct messaging
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Group conversations
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    File sharing
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardHeader>
+                <Shield className="h-12 w-12 text-red-600 mb-4" />
+                <CardTitle>Security & Compliance</CardTitle>
+                <CardDescription>
+                  Enterprise-grade security with role-based access control.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Data encryption
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Role-based access
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Audit trails
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6">
+              <CardHeader>
+                <Zap className="h-12 w-12 text-yellow-600 mb-4" />
+                <CardTitle>Analytics & Reporting</CardTitle>
+                <CardDescription>
+                  Get insights into your property performance and operations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Performance metrics
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Financial reports
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Custom dashboards
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Choose the plan that fits your needs. No hidden fees, no surprises.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="p-8">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Basic</CardTitle>
+                <CardDescription>Perfect for small property owners</CardDescription>
+                <div className="text-4xl font-bold text-gray-900 mt-4">$29<span className="text-lg text-gray-600">/month</span></div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Up to 5 properties
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Basic tenant portal
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Maintenance requests
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Email support
+                  </li>
+                </ul>
+                <Button className="w-full mt-6" variant="outline">
+                  Get Started
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="p-8 border-blue-500 relative">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500">
+                Most Popular
+              </Badge>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Professional</CardTitle>
+                <CardDescription>Ideal for growing property management companies</CardDescription>
+                <div className="text-4xl font-bold text-gray-900 mt-4">$79<span className="text-lg text-gray-600">/month</span></div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Up to 25 properties
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Advanced tenant portal
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Work order management
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Analytics & reporting
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Priority support
+                  </li>
+                </ul>
+                <Button className="w-full mt-6">
+                  Get Started
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="p-8">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Enterprise</CardTitle>
+                <CardDescription>For large property management companies</CardDescription>
+                <div className="text-4xl font-bold text-gray-900 mt-4">$199<span className="text-lg text-gray-600">/month</span></div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Unlimited properties
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Custom integrations
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Advanced analytics
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Dedicated support
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                    Custom training
+                  </li>
+                </ul>
+                <Button className="w-full mt-6" variant="outline">
+                  Contact Sales
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-600">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Ready to Transform Your Property Management?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Join thousands of property managers who trust Homely Quad to streamline their operations.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/register">
+                Start Your Free Trial
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600" asChild>
+              <Link href="#contact">Schedule Demo</Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h4 className="text-lg font-semibold mb-4">Homely Quad</h4>
+              <div className="flex items-center mb-4">
+                <Building2 className="h-8 w-8 text-blue-400" />
+                <span className="ml-2 text-xl font-bold">Homely Quad</span>
+              </div>
               <p className="text-gray-400">
-                Your trusted partner in finding the perfect rental property.
+                Modern rental property management platform for landlords, tenants, and maintenance teams.
               </p>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">For Renters</h4>
+              <h3 className="text-lg font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Search Properties</a></li>
-                <li><a href="#" className="hover:text-white">Saved Searches</a></li>
-                <li><a href="#" className="hover:text-white">Favorites</a></li>
+                <li><Link href="#features" className="hover:text-white">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
+                <li><Link href="#demo" className="hover:text-white">Demo</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">For Owners</h4>
+              <h3 className="text-lg font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">List Property</a></li>
-                <li><a href="#" className="hover:text-white">Manage Listings</a></li>
-                <li><a href="#" className="hover:text-white">Analytics</a></li>
+                <li><Link href="#about" className="hover:text-white">About</Link></li>
+                <li><Link href="#contact" className="hover:text-white">Contact</Link></li>
+                <li><Link href="#careers" className="hover:text-white">Careers</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Support</h4>
+              <h3 className="text-lg font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
+                <li><Link href="#help" className="hover:text-white">Help Center</Link></li>
+                <li><Link href="#docs" className="hover:text-white">Documentation</Link></li>
+                <li><Link href="#status" className="hover:text-white">Status</Link></li>
               </ul>
             </div>
           </div>

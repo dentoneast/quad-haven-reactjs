@@ -1,6 +1,6 @@
 # Contributing Guidelines
 
-Thank you for your interest in contributing to Homely Quad! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Homely Quad! This document provides guidelines and information for contributors. This project was migrated from the monolithic Rently Mobile application into a scalable monorepo structure.
 
 ## Code of Conduct
 
@@ -28,19 +28,28 @@ We are committed to providing a welcoming and inclusive environment for all cont
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Set up database**
+   ```bash
+   # Create PostgreSQL database
+   createdb homely_quad
+   
+   # Set up database tables and seed data
+   npm run db:push
+   ```
+
+4. **Set up environment variables**
    ```bash
    cp packages/server/env.example packages/server/.env
    cp packages/web/.env.example packages/web/.env.local
    cp packages/mobile/.env.example packages/mobile/.env
    ```
 
-4. **Build shared package**
+5. **Build shared package**
    ```bash
    npm run build:shared
    ```
 
-5. **Start development servers**
+6. **Start development servers**
    ```bash
    npm run dev
    ```
