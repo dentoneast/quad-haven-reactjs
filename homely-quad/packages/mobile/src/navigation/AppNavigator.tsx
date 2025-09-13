@@ -2,168 +2,143 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuth } from '@homely-quad/shared';
-
-// Auth Screens
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
-
-// Main Screens
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import { usePlatform } from '../hooks/usePlatform';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import PropertiesScreen from '../screens/PropertiesScreen';
-import PropertyDetailScreen from '../screens/PropertyDetailScreen';
-import SearchScreen from '../screens/SearchScreen';
-import FavoritesScreen from '../screens/FavoritesScreen';
-
-// Rental Management Screens
-import PremisesManagementScreen from '../screens/PremisesManagementScreen';
-import RentalUnitsScreen from '../screens/RentalUnitsScreen';
-import RentalListingsScreen from '../screens/RentalListingsScreen';
-import LeaseManagementScreen from '../screens/LeaseManagementScreen';
-import MyLeasesScreen from '../screens/MyLeasesScreen';
-import RentPaymentsScreen from '../screens/RentPaymentsScreen';
-import OrganizationManagementScreen from '../screens/OrganizationManagementScreen';
-
-// Maintenance Screens
-import MaintenanceRequestsScreen from '../screens/MaintenanceRequestsScreen';
-import LandlordMaintenanceScreen from '../screens/LandlordMaintenanceScreen';
-import WorkmanMaintenanceScreen from '../screens/WorkmanMaintenanceScreen';
-import MaintenanceDashboardScreen from '../screens/MaintenanceDashboardScreen';
-
-// Communication Screens
-import ConversationsScreen from '../screens/ConversationsScreen';
-import ChatScreen from '../screens/ChatScreen';
-
-// Other Screens
-import SettingsScreen from '../screens/SettingsScreen';
-import HelpSupportScreen from '../screens/HelpSupportScreen';
-
-// Components
-import SideMenu from '../components/SideMenu';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-const Drawer = createDrawerNavigator();
 
-// Auth Stack
 const AuthStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
   </Stack.Navigator>
 );
 
-// Main Tab Navigator
-const MainTabs = () => {
-  const { user } = useAuth();
-  const isLandlord = user?.user_type === 'landlord';
-  const isWorkman = user?.user_type === 'workman';
+const MainTabNavigator = () => {
+  const { isWeb } = usePlatform();
+  
+  // On web, don't show bottom tabs - navigation is handled by top navbar and sidebar
+  if (isWeb) {
+    return <HomeScreen />;
+  }
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        tabBarHideOnKeyboard: true,
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: '#6200ee',
+        tabBarInactiveTintColor: '#666666',
+        tabBarAllowFontScaling: false,
+        tabBarPressColor: '#e0e0e0',
+        tabBarPressOpacity: 0.7,
+        tabBarScrollEnabled: false,
+        tabBarLazy: true,
+        tabBarBadge: undefined,
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
+          let iconName: keyof typeof Ionicons.glyphMap;
 
-          switch (route.name) {
-            case 'Home':
-              iconName = 'home';
-              break;
-            case 'Search':
-              iconName = 'magnify';
-              break;
-            case 'Messages':
-              iconName = 'message-text';
-              break;
-            case 'Maintenance':
-              iconName = 'wrench';
-              break;
-            case 'Profile':
-              iconName = 'account';
-              break;
-            default:
-              iconName = 'home';
+          try {
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Profile') {
+              iconName = focused ? 'person' : 'person-outline';
+            } else {
+              iconName = 'help-outline';
+            }
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          } catch (error) {
+            // Fallback icon if there's any issue
+            return <Ionicons name="help-outline" size={size} color={color} />;
           }
-
-          return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#2196F3',
+        tabBarActiveTintColor: '#6200ee',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e0e0e0',
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 65,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
+          paddingHorizontal: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 2,
+          textAlign: 'center',
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
+          marginBottom: 2,
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: '#ff4444',
+          color: '#ffffff',
+          fontSize: 10,
+          fontWeight: 'bold',
+          borderRadius: 10,
+          minWidth: 20,
+          height: 20,
+          lineHeight: 20,
+        },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Messages" component={ConversationsScreen} />
-      <Tab.Screen name="Maintenance" component={MaintenanceRequestsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={{ 
+          title: 'Dashboard',
+          tabBarAccessibilityLabel: 'Go to Dashboard',
+          tabBarTestID: 'home-tab',
+        }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{ 
+          title: 'Profile',
+          tabBarAccessibilityLabel: 'View Profile',
+          tabBarTestID: 'profile-tab',
+        }}
+      />
     </Tab.Navigator>
   );
 };
 
-// Main Stack Navigator
-const MainStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="MainTabs" component={MainTabs} />
-    
-    {/* Property Management */}
-    <Stack.Screen name="Properties" component={PropertiesScreen} />
-    <Stack.Screen name="PropertyDetail" component={PropertyDetailScreen} />
-    <Stack.Screen name="Favorites" component={FavoritesScreen} />
-    
-    {/* Rental Management */}
-    <Stack.Screen name="PremisesManagement" component={PremisesManagementScreen} />
-    <Stack.Screen name="RentalUnits" component={RentalUnitsScreen} />
-    <Stack.Screen name="RentalListings" component={RentalListingsScreen} />
-    <Stack.Screen name="LeaseManagement" component={LeaseManagementScreen} />
-    <Stack.Screen name="MyLeases" component={MyLeasesScreen} />
-    <Stack.Screen name="RentPayments" component={RentPaymentsScreen} />
-    <Stack.Screen name="OrganizationManagement" component={OrganizationManagementScreen} />
-    
-    {/* Maintenance */}
-    <Stack.Screen name="MaintenanceRequests" component={MaintenanceRequestsScreen} />
-    <Stack.Screen name="LandlordMaintenance" component={LandlordMaintenanceScreen} />
-    <Stack.Screen name="WorkmanMaintenance" component={WorkmanMaintenanceScreen} />
-    <Stack.Screen name="MaintenanceDashboard" component={MaintenanceDashboardScreen} />
-    
-    {/* Communication */}
-    <Stack.Screen name="Conversations" component={ConversationsScreen} />
-    <Stack.Screen name="Chat" component={ChatScreen} />
-    
-    {/* Other */}
-    <Stack.Screen name="Settings" component={SettingsScreen} />
-    <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-  </Stack.Navigator>
-);
-
-// Drawer Navigator
-const DrawerNavigator = () => (
-  <Drawer.Navigator
-    drawerContent={(props) => <SideMenu {...props} />}
-    screenOptions={{
-      headerShown: false,
-      drawerType: 'front',
-    }}
-  >
-    <Drawer.Screen name="Main" component={MainStack} />
-  </Drawer.Navigator>
-);
-
-// Main App Navigator
-const AppNavigator = () => {
+const AppNavigator: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    // You can add a loading screen here
     return null;
   }
 
   return (
     <NavigationContainer>
-      {user ? <DrawerNavigator /> : <AuthStack />}
+      {user ? <MainTabNavigator /> : <AuthStack />}
     </NavigationContainer>
   );
 };

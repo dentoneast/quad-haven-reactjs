@@ -64,5 +64,9 @@
     "backend"
   ],
   "author": "Homely Quad Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "ajv": "^8.17.1"
+  }
 }

@@ -9,9 +9,9 @@ export const APP_CONFIG = {
   
   // API Configuration
   BASE_URL: Platform.select({
-    android: 'http://10.0.2.2:3001/api', // Android emulator
-    ios: 'http://localhost:3001/api',      // iOS simulator
-    default: 'http://localhost:3001/api'   // Web and fallback
+    android: 'http://10.0.2.2:3000/api', // Android emulator
+    ios: 'http://localhost:3000/api',      // iOS simulator
+    default: 'http://localhost:3000/api'   // Web and fallback
   }),
   
   TIMEOUT: 10000, // 10 seconds

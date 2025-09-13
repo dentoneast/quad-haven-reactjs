@@ -1,5 +1,12 @@
 import { Platform } from 'react-native';
-import { PlatformInfo } from '@homely-quad/shared';
+
+export interface PlatformInfo {
+  isWeb: boolean;
+  isMobile: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+  platform: 'web' | 'ios' | 'android';
+}
 
 export const usePlatform = (): PlatformInfo => {
   const isWeb = Platform.OS === 'web';
