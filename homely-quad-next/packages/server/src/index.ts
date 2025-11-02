@@ -6,6 +6,7 @@ import { db } from './db';
 import { users } from '../../shared/schema';
 import maintenanceRoutes from './routes/maintenance';
 import userRoutes from './routes/user';
+import paymentRoutes from './routes/payments';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -74,6 +75,7 @@ app.get('/api/health', async (req, res) => {
 // API Routes
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

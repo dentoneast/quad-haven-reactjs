@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function MaintenanceDashboardPage() {
   const { user, token } = useAuth();
@@ -42,19 +43,16 @@ export default function MaintenanceDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading dashboard...</div>
-      </div>
+      <DashboardLayout title="Maintenance Dashboard" description="Track and manage maintenance requests">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-600">Loading dashboard...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Maintenance Dashboard</h1>
-          <p className="text-gray-600 mt-2">Track and manage maintenance requests</p>
-        </div>
+    <DashboardLayout title="Maintenance Dashboard" description="Track and manage maintenance requests">
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -156,7 +154,6 @@ export default function MaintenanceDashboardPage() {
             <p className="text-sm text-gray-600 mt-2">All time</p>
           </div>
         </div>
-      </div>
-    </div>
+      </DashboardLayout>
   );
 }
