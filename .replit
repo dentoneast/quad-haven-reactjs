@@ -64,6 +64,10 @@ waitForPort = 3001
 localPort = 3001
 externalPort = 3001
 
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "cd homely-quad-web/packages/web && npm run start"]
