@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { eq, and, gte, lte, desc, sql, or } from 'drizzle-orm';
 import { db } from '../db';
-import { payments, leases, units, properties, users } from '@homely-quad/shared/schema';
+import { payments, leases, units, properties, users } from '../../../shared/schema';
 
 export class PaymentController {
   static async getStats(req: Request, res: Response) {
