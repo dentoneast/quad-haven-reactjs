@@ -1,126 +1,193 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ApiResponse, ApiError } from '../types';
-
-export interface ApiClientConfig {
-  baseURL: string;
-  timeout?: number;
-  headers?: Record<string, string>;
-}
+import type { ApiResponse, ApiError, RequestConfig } from '../types';
 
 export class ApiClient {
-  private client: AxiosInstance;
+  private baseUrl: string;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private onAuthError?: () => void;
+  private onTokenRefresh?: (token: string, refreshToken: string) => void;
 
-  constructor(config: ApiClientConfig) {
-    this.client = axios.create({
-      baseURL: config.baseURL,
-      timeout: config.timeout || 10000,
-      headers: {
-        'Content-Type': 'application/json',
-        ...config.headers,
-      },
-    });
-
-    this.setupInterceptors();
+  constructor(
+    baseUrl: string,
+    onAuthError?: () => void,
+    onTokenRefresh?: (token: string, refreshToken: string) => void
+  ) {
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.onAuthError = onAuthError;
+    this.onTokenRefresh = onTokenRefresh;
   }
 
-  private setupInterceptors(): void {
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config) => {
-        if (this.token) {
-          config.headers.Authorization = `Bearer ${this.token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response: AxiosResponse<ApiResponse>) => {
-        return response;
-      },
-      (error) => {
-        if (error.response?.status === 401) {
-          this.handleUnauthorized();
-        }
-        return Promise.reject(this.formatError(error));
-      }
-    );
-  }
-
-  private formatError(error: any): ApiError {
-    if (error.response?.data) {
-      return {
-        message: error.response.data.message || 'An error occurred',
-        code: error.response.data.code || 'UNKNOWN_ERROR',
-        statusCode: error.response.status,
-        details: error.response.data.details,
-      };
-    }
-
-    return {
-      message: error.message || 'Network error',
-      code: 'NETWORK_ERROR',
-      statusCode: 0,
-    };
-  }
-
-  private handleUnauthorized(): void {
-    this.token = null;
-    // This would typically trigger a redirect to login or refresh token logic
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-  }
-
-  public setToken(token: string | null): void {
+  setTokens(token: string | null, refreshToken: string | null = null) {
     this.token = token;
+    this.refreshToken = refreshToken;
   }
 
-  public getToken(): string | null {
+  getToken(): string | null {
     return this.token;
   }
 
-  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.get<ApiResponse<T>>(url, config);
-    return response.data.data;
+  private getHeaders(customHeaders?: Record<string, string>): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    return headers;
   }
 
-  public async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.post<ApiResponse<T>>(url, data, config);
-    return response.data.data;
-  }
+  private buildUrl(endpoint: string, params?: Record<string, any>): string {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    if (!params || Object.keys(params).length === 0) {
+      return url;
+    }
 
-  public async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.put<ApiResponse<T>>(url, data, config);
-    return response.data.data;
-  }
-
-  public async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.patch<ApiResponse<T>>(url, data, config);
-    return response.data.data;
-  }
-
-  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.delete<ApiResponse<T>>(url, config);
-    return response.data.data;
-  }
-
-  public async upload<T>(url: string, file: File | FormData, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.post<ApiResponse<T>>(url, file, {
-      ...config,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...config?.headers,
-      },
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
     });
-    return response.data.data;
+
+    const queryString = searchParams.toString();
+    return queryString ? `${url}?${queryString}` : url;
+  }
+
+  async request<T = any>(
+    endpoint: string,
+    config: RequestConfig = {}
+  ): Promise<T> {
+    const {
+      method = 'GET',
+      headers: customHeaders,
+      body,
+      params,
+    } = config;
+
+    const url = this.buildUrl(endpoint, params);
+    const headers = this.getHeaders(customHeaders);
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          if (this.refreshToken) {
+            try {
+              const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: this.refreshToken }),
+              });
+
+              if (refreshResponse.ok) {
+                const refreshData = await refreshResponse.json();
+                this.setTokens(refreshData.token, refreshData.refreshToken);
+                
+                if (this.onTokenRefresh) {
+                  this.onTokenRefresh(refreshData.token, refreshData.refreshToken);
+                }
+                
+                const retryHeaders = this.getHeaders(customHeaders);
+                const retryResponse = await fetch(url, {
+                  method,
+                  headers: retryHeaders,
+                  body: body ? JSON.stringify(body) : undefined,
+                });
+
+                if (retryResponse.ok) {
+                  const contentType = retryResponse.headers.get('content-type');
+                  if (retryResponse.status === 204 || !contentType?.includes('application/json')) {
+                    return {} as T;
+                  }
+                  return await retryResponse.json();
+                }
+              }
+            } catch {
+              this.onAuthError?.();
+            }
+          }
+          this.onAuthError?.();
+        }
+
+        const contentType = response.headers.get('content-type');
+        let errorData: any = {};
+        
+        if (contentType?.includes('application/json')) {
+          errorData = await response.json();
+        }
+
+        const error: ApiError = {
+          message: errorData.error || errorData.message || 'Request failed',
+          code: errorData.code,
+          statusCode: response.status,
+          errors: errorData.errors,
+        };
+        throw error;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (response.status === 204 || !contentType?.includes('application/json')) {
+        return {} as T;
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error && typeof error === 'object' && 'message' in error) {
+        throw error;
+      }
+
+      const apiError: ApiError = {
+        message: 'Network error. Please check your connection.',
+        statusCode: 0,
+      };
+      throw apiError;
+    }
+  }
+
+  async get<T = any>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', params });
+  }
+
+  async post<T = any>(endpoint: string, body?: any): Promise<T> {
+    return this.request<T>(endpoint, { method: 'POST', body });
+  }
+
+  async put<T = any>(endpoint: string, body?: any): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PUT', body });
+  }
+
+  async patch<T = any>(endpoint: string, body?: any): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PATCH', body });
+  }
+
+  async delete<T = any>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
 
-// Default API client instance
-export const apiClient = new ApiClient({
-  baseURL: process.env.REACT_APP_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api',
-});
+let apiClientInstance: ApiClient | null = null;
+
+export function createApiClient(
+  baseUrl: string,
+  onAuthError?: () => void,
+  onTokenRefresh?: (token: string, refreshToken: string) => void
+): ApiClient {
+  apiClientInstance = new ApiClient(baseUrl, onAuthError, onTokenRefresh);
+  return apiClientInstance;
+}
+
+export function getApiClient(): ApiClient {
+  if (!apiClientInstance) {
+    throw new Error('API client not initialized. Call createApiClient first.');
+  }
+  return apiClientInstance;
+}

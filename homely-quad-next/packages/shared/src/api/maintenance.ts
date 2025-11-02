@@ -1,102 +1,90 @@
-import { apiClient } from './client';
-import { MaintenanceRequest, MaintenanceWorkOrder, MaintenanceApproval, MaintenancePhoto, MaintenanceNotification } from '../types';
+import type {
+  MaintenanceRequest,
+  MaintenanceRequestWithDetails,
+  CreateMaintenanceRequestData,
+  UpdateMaintenanceRequestData,
+  MaintenanceFilters,
+  MaintenanceStats,
+} from '../types';
+import { getApiClient } from './client';
 
-export class MaintenanceService {
-  // Maintenance Requests
-  async getMaintenanceRequests(): Promise<MaintenanceRequest[]> {
-    return apiClient.get<MaintenanceRequest[]>('/maintenance-requests');
-  }
+export const maintenanceApi = {
+  async getAll(filters?: MaintenanceFilters): Promise<MaintenanceRequest[]> {
+    const client = getApiClient();
+    return client.get<MaintenanceRequest[]>('/maintenance', filters);
+  },
 
-  async getMaintenanceRequest(id: number): Promise<MaintenanceRequest> {
-    return apiClient.get<MaintenanceRequest>(`/maintenance-requests/${id}`);
-  }
+  async getById(id: number): Promise<MaintenanceRequestWithDetails> {
+    const client = getApiClient();
+    return client.get<MaintenanceRequestWithDetails>(`/maintenance/${id}`);
+  },
 
-  async createMaintenanceRequest(request: Omit<MaintenanceRequest, 'id' | 'created_at' | 'updated_at'>): Promise<MaintenanceRequest> {
-    return apiClient.post<MaintenanceRequest>('/maintenance-requests', request);
-  }
+  async getByTenant(tenantId: number): Promise<MaintenanceRequestWithDetails[]> {
+    const client = getApiClient();
+    return client.get<MaintenanceRequestWithDetails[]>(`/maintenance/tenant/${tenantId}`);
+  },
 
-  async updateMaintenanceRequest(id: number, request: Partial<MaintenanceRequest>): Promise<MaintenanceRequest> {
-    return apiClient.put<MaintenanceRequest>(`/maintenance-requests/${id}`, request);
-  }
+  async getByUnit(unitId: number): Promise<MaintenanceRequestWithDetails[]> {
+    const client = getApiClient();
+    return client.get<MaintenanceRequestWithDetails[]>(`/maintenance/unit/${unitId}`);
+  },
 
-  async deleteMaintenanceRequest(id: number): Promise<void> {
-    return apiClient.delete<void>(`/maintenance-requests/${id}`);
-  }
+  async getAssigned(workerId: number): Promise<MaintenanceRequestWithDetails[]> {
+    const client = getApiClient();
+    return client.get<MaintenanceRequestWithDetails[]>(`/maintenance/assigned/${workerId}`);
+  },
 
-  // Maintenance Approvals
-  async approveMaintenanceRequest(id: number, comments?: string): Promise<MaintenanceApproval> {
-    return apiClient.put<MaintenanceApproval>(`/maintenance-requests/${id}/approve`, { comments });
-  }
+  async getStats(filters?: MaintenanceFilters): Promise<MaintenanceStats> {
+    const client = getApiClient();
+    return client.get<MaintenanceStats>('/maintenance/stats', filters);
+  },
 
-  async rejectMaintenanceRequest(id: number, comments: string): Promise<MaintenanceApproval> {
-    return apiClient.put<MaintenanceApproval>(`/maintenance-requests/${id}/reject`, { comments });
-  }
+  async create(data: CreateMaintenanceRequestData): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.post<MaintenanceRequest>('/maintenance', data);
+  },
 
-  // Work Orders
-  async assignWorkOrder(requestId: number, workmanId: number, instructions: string): Promise<MaintenanceWorkOrder> {
-    return apiClient.post<MaintenanceWorkOrder>(`/maintenance-requests/${requestId}/assign`, {
-      workman_id: workmanId,
-      instructions
-    });
-  }
+  async update(data: UpdateMaintenanceRequestData): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    const { id, ...updateData } = data;
+    return client.put<MaintenanceRequest>(`/maintenance/${id}`, updateData);
+  },
 
-  async getWorkOrders(): Promise<MaintenanceWorkOrder[]> {
-    return apiClient.get<MaintenanceWorkOrder[]>('/work-orders');
-  }
+  async delete(id: number): Promise<void> {
+    const client = getApiClient();
+    return client.delete(`/maintenance/${id}`);
+  },
 
-  async getWorkOrder(id: number): Promise<MaintenanceWorkOrder> {
-    return apiClient.get<MaintenanceWorkOrder>(`/work-orders/${id}`);
-  }
+  async updateStatus(id: number, status: string): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.patch<MaintenanceRequest>(`/maintenance/${id}/status`, { status });
+  },
 
-  async updateWorkOrderStatus(id: number, status: string, notes?: string): Promise<MaintenanceWorkOrder> {
-    return apiClient.put<MaintenanceWorkOrder>(`/work-orders/${id}/status`, { status, notes });
-  }
+  async assign(id: number, workerId: number): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.post<MaintenanceRequest>(`/maintenance/${id}/assign`, { workerId });
+  },
 
-  // Maintenance Photos
-  async uploadMaintenancePhoto(requestId: number, photo: File, description?: string): Promise<MaintenancePhoto> {
+  async approve(id: number): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.post<MaintenanceRequest>(`/maintenance/${id}/approve`);
+  },
+
+  async reject(id: number, reason: string): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.post<MaintenanceRequest>(`/maintenance/${id}/reject`, { reason });
+  },
+
+  async complete(id: number, notes?: string): Promise<MaintenanceRequest> {
+    const client = getApiClient();
+    return client.post<MaintenanceRequest>(`/maintenance/${id}/complete`, { notes });
+  },
+
+  async uploadImage(requestId: number, imageFile: File): Promise<{ imageUrl: string }> {
+    const client = getApiClient();
     const formData = new FormData();
-    formData.append('photo', photo);
-    if (description) {
-      formData.append('description', description);
-    }
+    formData.append('image', imageFile);
     
-    return apiClient.upload<MaintenancePhoto>(`/maintenance-requests/${requestId}/photos`, formData);
-  }
-
-  async getMaintenancePhotos(requestId: number): Promise<MaintenancePhoto[]> {
-    return apiClient.get<MaintenancePhoto[]>(`/maintenance-requests/${requestId}/photos`);
-  }
-
-  // Notifications
-  async getMaintenanceNotifications(): Promise<MaintenanceNotification[]> {
-    return apiClient.get<MaintenanceNotification[]>('/maintenance-notifications');
-  }
-
-  async markNotificationAsRead(id: number): Promise<void> {
-    return apiClient.put<void>(`/maintenance-notifications/${id}/read`);
-  }
-
-  // Landlord-specific endpoints
-  async getLandlordPremises(): Promise<any[]> {
-    return apiClient.get<any[]>('/landlord/premises');
-  }
-
-  async getLandlordTenants(): Promise<any[]> {
-    return apiClient.get<any[]>('/landlord/tenants');
-  }
-
-  async createLandlordMaintenanceRequest(request: any): Promise<MaintenanceRequest> {
-    return apiClient.post<MaintenanceRequest>('/landlord/maintenance-requests', request);
-  }
-
-  // Workman-specific endpoints
-  async getWorkmanWorkOrders(): Promise<MaintenanceWorkOrder[]> {
-    return apiClient.get<MaintenanceWorkOrder[]>('/workman/work-orders');
-  }
-
-  async getWorkmanDashboard(): Promise<any> {
-    return apiClient.get<any>('/workman/dashboard');
-  }
-}
-
-export const maintenanceService = new MaintenanceService();
+    return client.post<{ imageUrl: string }>(`/maintenance/${requestId}/images`, formData);
+  },
+};

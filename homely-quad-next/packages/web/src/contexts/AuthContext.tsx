@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User, LoginData, RegisterData } from '@homely-quad/shared/types';
-import { authApi, createApiClient } from '@homely-quad/shared/api';
+import { createApiClient } from '../lib/api-client';
 
 interface AuthContextType {
   user: User | null;
@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginData) => {
     try {
-      const response = await authApi.login(apiClient, credentials);
+      const response = await apiClient.post<{ token: string; refreshToken: string; user: User }>('/auth/login', credentials);
       
       setToken(response.token);
       setUser(response.user);
@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData) => {
     try {
-      const response = await authApi.register(apiClient, userData);
+      const response = await apiClient.post<{ token: string; refreshToken: string; user: User }>('/auth/register', userData);
       
       setToken(response.token);
       setUser(response.user);
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authApi.logout(apiClient);
+      await apiClient.post('/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (data: Partial<User>) => {
     try {
-      const updatedUser = await authApi.updateProfile(apiClient, data);
+      const updatedUser = await apiClient.put<User>('/user/profile', data);
       setUser(updatedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {
@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const updatedUser = await authApi.getProfile(apiClient);
+      const updatedUser = await apiClient.get<User>('/user/profile');
       setUser(updatedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {

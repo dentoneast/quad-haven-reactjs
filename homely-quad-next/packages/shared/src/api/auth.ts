@@ -1,35 +1,83 @@
-import { apiClient } from './client';
-import { LoginCredentials, RegisterData, User, AuthResponse } from '../types';
+import type { 
+  User, 
+  LoginCredentials, 
+  RegisterData, 
+  ChangePasswordData,
+  AuthResponse,
+  ApiResponse 
+} from '../types';
+import { getApiClient } from './client';
 
-export class AuthService {
-  private readonly basePath = '/auth';
-
+export const authApi = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>(`${this.basePath}/login`, credentials);
-  }
+    const client = getApiClient();
+    const response = await client.post<AuthResponse>('/auth/login', credentials);
+    
+    if (response.token) {
+      client.setTokens(response.token, response.refreshToken);
+    }
+    
+    return response;
+  },
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>(`${this.basePath}/register`, data);
-  }
+    const client = getApiClient();
+    const response = await client.post<AuthResponse>('/auth/register', data);
+    
+    if (response.token) {
+      client.setTokens(response.token, response.refreshToken);
+    }
+    
+    return response;
+  },
 
   async logout(): Promise<void> {
-    return apiClient.post<void>(`${this.basePath}/logout`);
-  }
+    const client = getApiClient();
+    try {
+      await client.post('/auth/logout');
+    } finally {
+      client.setTokens(null, null);
+    }
+  },
 
-  async getCurrentUser(): Promise<User> {
-    return apiClient.get<User>(`${this.basePath}/me`);
-  }
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    const client = getApiClient();
+    const response = await client.post<AuthResponse>('/auth/refresh', { refreshToken });
+    
+    if (response.token) {
+      client.setTokens(response.token, response.refreshToken);
+    }
+    
+    return response;
+  },
+
+  async getProfile(): Promise<User> {
+    const client = getApiClient();
+    return client.get<User>('/auth/profile');
+  },
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    return apiClient.put<User>(`/user/profile`, data);
-  }
+    const client = getApiClient();
+    return client.put<User>('/auth/profile', data);
+  },
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return apiClient.put<void>(`/user/change-password`, {
-      currentPassword,
-      newPassword,
-    });
-  }
-}
+  async changePassword(data: ChangePasswordData): Promise<ApiResponse> {
+    const client = getApiClient();
+    return client.put<ApiResponse>('/auth/change-password', data);
+  },
 
-export const authService = new AuthService();
+  async requestPasswordReset(email: string): Promise<ApiResponse> {
+    const client = getApiClient();
+    return client.post<ApiResponse>('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<ApiResponse> {
+    const client = getApiClient();
+    return client.post<ApiResponse>('/auth/reset-password', { token, newPassword });
+  },
+
+  async verifyEmail(token: string): Promise<ApiResponse> {
+    const client = getApiClient();
+    return client.post<ApiResponse>('/auth/verify-email', { token });
+  },
+};
