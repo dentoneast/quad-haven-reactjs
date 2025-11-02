@@ -1,9 +1,9 @@
 # Feature Migration Plan: homely-quad-mobile → homely-quad-next
 
-**Document Version**: 1.3  
+**Document Version**: 1.4  
 **Created**: November 2, 2025  
 **Last Updated**: November 2, 2025  
-**Status**: Phase 3 Complete ✅
+**Status**: Phase 4 Complete ✅ | Phase 1.5 Added 📋
 
 ---
 
@@ -176,6 +176,81 @@ homely-quad-next/packages/shared/
 - `packages/shared/index.ts` - Main package entry point
 
 **Dependencies**: Phase 1.2 (Type definitions)
+
+---
+
+## Phase 1.5: Database Seeding & Test Data 📋 **PLANNED**
+
+**Target Completion**: Before Phase 2 deployment  
+**Status**: Pending migration from homely-quad-mobile
+
+### 1.5.1 Database Seeding Scripts Migration
+
+**Objective**: Migrate database seeding and testing utilities from the old project to support development and testing
+
+**Source Files** (homely-quad-mobile/server):
+- `setup-db.js` - Database schema setup (raw SQL)
+- `seed-db.js` - Sample data seeding script
+- `reset-db.js` - Database reset utility
+
+**Tasks**:
+- [ ] Migrate `seed-db.js` to Drizzle ORM format in `packages/server/src/scripts/`
+- [ ] Create `seed-database.ts` using Drizzle ORM instead of raw SQL
+- [ ] Migrate all sample data entities:
+  - [ ] Organizations (3 sample organizations)
+  - [ ] Users (10 sample users across all roles: tenant, landlord, workman, admin)
+  - [ ] Properties/Premises (5 sample properties)
+  - [ ] Rental Units (5+ sample units)
+  - [ ] Leases (active and expired samples)
+  - [ ] Maintenance Requests (various statuses and priorities)
+  - [ ] Work Orders (assigned, in-progress, completed)
+  - [ ] Maintenance Approvals
+  - [ ] Conversations & Messages
+  - [ ] Rental Listings
+- [ ] Create database reset script using Drizzle
+- [ ] Add npm scripts for database operations:
+  - [ ] `npm run db:seed` - Run seeding script
+  - [ ] `npm run db:reset` - Reset and reseed database
+  - [ ] `npm run db:seed:prod` - Production-safe seeding (optional)
+- [ ] Document seeding process in README
+- [ ] Add environment check to prevent accidental production seeding
+
+**Deliverables**:
+- `packages/server/src/scripts/seed-database.ts` - Main seeding script using Drizzle ORM
+- `packages/server/src/scripts/reset-database.ts` - Database reset utility
+- `packages/server/src/scripts/data/` - Sample data fixtures directory
+  - `organizations.ts` - Organization sample data
+  - `users.ts` - User sample data (with hashed passwords)
+  - `properties.ts` - Property and unit sample data
+  - `leases.ts` - Lease sample data
+  - `maintenance.ts` - Maintenance request sample data
+  - `messages.ts` - Conversation and message sample data
+- Updated `package.json` with seeding scripts
+- `packages/server/README.md` - Seeding documentation
+
+**Sample Data Requirements**:
+- Realistic data that demonstrates all features
+- Proper foreign key relationships
+- Various user roles with appropriate permissions
+- Different maintenance request statuses for workflow testing
+- Active and historical leases
+- Messages between different user types
+- Proper timestamps for realistic timelines
+
+**Benefits**:
+- Consistent development environment across team
+- Faster onboarding for new developers
+- Comprehensive testing data for QA
+- Demo-ready data for presentations
+- Easy database reset during development
+
+**Dependencies**: Phase 1.1, 1.2 (Schema and types must exist)
+
+**Notes**:
+- Use bcrypt for password hashing (password: "password123" for all test users)
+- Include organization assignments for proper multi-tenancy testing
+- Ensure maintenance request data covers all workflow states
+- Add check to prevent running in production environment
 
 ---
 
