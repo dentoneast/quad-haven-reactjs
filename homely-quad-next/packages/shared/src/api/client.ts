@@ -127,7 +127,7 @@ export class ApiClient {
 
         const error: ApiError = {
           message: errorData.error || errorData.message || 'Request failed',
-          code: errorData.code,
+          code: errorData.code || 'API_ERROR',
           statusCode: response.status,
           errors: errorData.errors,
         };
@@ -147,6 +147,7 @@ export class ApiClient {
 
       const apiError: ApiError = {
         message: 'Network error. Please check your connection.',
+        code: 'NETWORK_ERROR',
         statusCode: 0,
       };
       throw apiError;
