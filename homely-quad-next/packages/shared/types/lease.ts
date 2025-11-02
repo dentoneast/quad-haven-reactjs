@@ -6,8 +6,8 @@ export interface Lease {
   tenantId: number;
   startDate: string;
   endDate: string;
-  monthlyRent: string;
-  deposit: string | null;
+  monthlyRent: number;
+  deposit: number | null;
   status: LeaseStatus;
   terms: string | null;
   createdAt: string;

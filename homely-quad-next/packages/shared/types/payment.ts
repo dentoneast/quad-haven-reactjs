@@ -4,7 +4,7 @@ export type PaymentMethod = 'cash' | 'check' | 'bank_transfer' | 'credit_card' |
 export interface Payment {
   id: number;
   leaseId: number;
-  amount: string;
+  amount: number;
   dueDate: string;
   paidDate: string | null;
   status: PaymentStatus;

@@ -5,10 +5,10 @@ export interface Unit {
   propertyId: number;
   unitNumber: string;
   bedrooms: number;
-  bathrooms: string;
+  bathrooms: number;
   squareFeet: number | null;
-  rent: string;
-  deposit: string | null;
+  rent: number;
+  deposit: number | null;
   status: UnitStatus;
   description: string | null;
   amenities: string[] | null;
