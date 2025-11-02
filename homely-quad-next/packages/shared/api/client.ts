@@ -5,10 +5,16 @@ export class ApiClient {
   private token: string | null = null;
   private refreshToken: string | null = null;
   private onAuthError?: () => void;
+  private onTokenRefresh?: (token: string, refreshToken: string) => void;
 
-  constructor(baseUrl: string, onAuthError?: () => void) {
+  constructor(
+    baseUrl: string,
+    onAuthError?: () => void,
+    onTokenRefresh?: (token: string, refreshToken: string) => void
+  ) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
     this.onAuthError = onAuthError;
+    this.onTokenRefresh = onTokenRefresh;
   }
 
   setTokens(token: string | null, refreshToken: string | null = null) {
@@ -85,6 +91,10 @@ export class ApiClient {
               if (refreshResponse.ok) {
                 const refreshData = await refreshResponse.json();
                 this.setTokens(refreshData.token, refreshData.refreshToken);
+                
+                if (this.onTokenRefresh) {
+                  this.onTokenRefresh(refreshData.token, refreshData.refreshToken);
+                }
                 
                 const retryHeaders = this.getHeaders(customHeaders);
                 const retryResponse = await fetch(url, {
@@ -166,8 +176,12 @@ export class ApiClient {
 
 let apiClientInstance: ApiClient | null = null;
 
-export function createApiClient(baseUrl: string, onAuthError?: () => void): ApiClient {
-  apiClientInstance = new ApiClient(baseUrl, onAuthError);
+export function createApiClient(
+  baseUrl: string,
+  onAuthError?: () => void,
+  onTokenRefresh?: (token: string, refreshToken: string) => void
+): ApiClient {
+  apiClientInstance = new ApiClient(baseUrl, onAuthError, onTokenRefresh);
   return apiClientInstance;
 }
 

@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { validation } from '@homely-quad/shared/utils';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,13 +28,23 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
+    if (!validation.isEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.password) {
+      setError('Password is required');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // TODO: Implement actual login logic
-      console.log('Login attempt:', formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
-      setError('Invalid credentials. Please try again.');
+      await login(formData);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }

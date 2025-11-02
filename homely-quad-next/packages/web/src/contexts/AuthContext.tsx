@@ -1,8 +1,9 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'next/navigation';
 import type { User, LoginData, RegisterData } from '@homely-quad/shared/types';
 import { authApi, createApiClient } from '@homely-quad/shared/api';
-import { getApiUrl } from '../config/app';
 
 interface AuthContextType {
   user: User | null;
@@ -12,8 +13,7 @@ interface AuthContextType {
   login: (credentials: LoginData) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (profileData: Partial<User>) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -31,40 +31,40 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const TOKEN_KEY = 'authToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
+const TOKEN_KEY = 'homely_quad_token';
+const REFRESH_TOKEN_KEY = 'homely_quad_refresh_token';
+const USER_KEY = 'homely_quad_user';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-  const handleTokenRefresh = async (newToken: string, newRefreshToken: string) => {
+  const handleTokenRefresh = (newToken: string, newRefreshToken: string) => {
     setToken(newToken);
     apiClient.setTokens(newToken, newRefreshToken);
-    if (user) {
-      await storeAuth(newToken, newRefreshToken, user);
-    }
+    storeAuth(newToken, newRefreshToken, user!);
   };
 
   const apiClient = createApiClient(
-    getApiUrl(''),
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
     () => {
-      clearAuth();
+      handleAuthError();
     },
     handleTokenRefresh
   );
 
-  useEffect(() => {
-    loadStoredAuth();
-  }, []);
+  const handleAuthError = () => {
+    clearAuth();
+    router.push('/login');
+  };
 
-  const loadStoredAuth = async () => {
+  const loadStoredAuth = () => {
     try {
-      const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
-      const storedRefreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-      const storedUser = await SecureStore.getItemAsync(USER_KEY);
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      const storedUser = localStorage.getItem(USER_KEY);
 
       if (storedToken && storedUser) {
         setToken(storedToken);
@@ -73,31 +73,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error loading stored auth:', error);
+      clearAuth();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const storeAuth = async (newToken: string, refreshToken: string, newUser: User) => {
+  useEffect(() => {
+    loadStoredAuth();
+  }, []);
+
+  const storeAuth = (newToken: string, refreshToken: string, newUser: User) => {
     try {
-      await SecureStore.setItemAsync(TOKEN_KEY, newToken);
-      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
-      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(newUser));
+      localStorage.setItem(TOKEN_KEY, newToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     } catch (error) {
       console.error('Error storing auth:', error);
     }
   };
 
-  const clearAuth = async () => {
-    try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-      await SecureStore.deleteItemAsync(USER_KEY);
-    } catch (error) {
-      console.error('Error clearing auth:', error);
-    }
+  const clearAuth = () => {
     setToken(null);
     setUser(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     apiClient.setTokens(null, null);
   };
 
@@ -108,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(response.token);
       setUser(response.user);
       apiClient.setTokens(response.token, response.refreshToken || null);
-      await storeAuth(response.token, response.refreshToken || '', response.user);
+      storeAuth(response.token, response.refreshToken || '', response.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -122,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(response.token);
       setUser(response.user);
       apiClient.setTokens(response.token, response.refreshToken || null);
-      await storeAuth(response.token, response.refreshToken || '', response.user);
+      storeAuth(response.token, response.refreshToken || '', response.user);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -135,26 +136,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      await clearAuth();
+      clearAuth();
+      router.push('/login');
     }
   };
 
-  const updateProfile = async (profileData: Partial<User>) => {
+  const updateProfile = async (data: Partial<User>) => {
     try {
-      const updatedUser = await authApi.updateProfile(apiClient, profileData);
+      const updatedUser = await authApi.updateProfile(apiClient, data);
       setUser(updatedUser);
-      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Profile update error:', error);
-      throw error;
-    }
-  };
-
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    try {
-      await authApi.changePassword(apiClient, currentPassword, newPassword);
-    } catch (error) {
-      console.error('Password change error:', error);
       throw error;
     }
   };
@@ -163,7 +156,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const updatedUser = await authApi.getProfile(apiClient);
       setUser(updatedUser);
-      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Refresh user error:', error);
       throw error;
@@ -179,7 +172,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateProfile,
-    changePassword,
     refreshUser,
   };
 
