@@ -2,7 +2,13 @@
 const nextConfig = {
   transpilePackages: ['@homely-quad/shared'],
   allowedDevOrigins: process.env.REPLIT_DEV_DOMAIN 
-    ? [process.env.REPLIT_DEV_DOMAIN, `https://${process.env.REPLIT_DEV_DOMAIN}`, `http://${process.env.REPLIT_DEV_DOMAIN}`]
+    ? [
+        process.env.REPLIT_DEV_DOMAIN, 
+        `https://${process.env.REPLIT_DEV_DOMAIN}`, 
+        `http://${process.env.REPLIT_DEV_DOMAIN}`,
+        '127.0.0.1',
+        'localhost'
+      ]
     : ['*'],
   webpack: (config) => {
     config.resolve.alias = {
