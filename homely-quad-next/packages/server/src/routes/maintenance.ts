@@ -28,6 +28,7 @@ const validateAssignWorkman = [
 
 // Routes
 router.get('/stats', (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.getStats(req, res, next));
+router.get('/workmen', (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.getWorkmen(req, res, next));
 router.get('/', (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.getAllRequests(req, res, next));
 router.get('/:id', param('id').isInt(), (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.getRequestById(req, res, next));
 router.post('/', validateCreateRequest, (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.createRequest(req, res, next));

@@ -20,25 +20,48 @@ export class MaintenanceController {
       }
 
       // Build query based on role
-      let whereCondition;
+      let results;
+      
       if (userRole === 'tenant') {
-        whereCondition = eq(maintenanceRequests.tenantId, userId);
+        results = await db
+          .select({
+            status: maintenanceRequests.status,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(maintenanceRequests)
+          .where(eq(maintenanceRequests.tenantId, userId))
+          .groupBy(maintenanceRequests.status);
       } else if (userRole === 'workman') {
-        whereCondition = eq(maintenanceRequests.assignedTo, userId);
+        results = await db
+          .select({
+            status: maintenanceRequests.status,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(maintenanceRequests)
+          .where(eq(maintenanceRequests.assignedTo, userId))
+          .groupBy(maintenanceRequests.status);
+      } else if (userRole === 'landlord') {
+        // Landlords see only their properties' maintenance requests
+        results = await db
+          .select({
+            status: maintenanceRequests.status,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(maintenanceRequests)
+          .innerJoin(units, eq(maintenanceRequests.unitId, units.id))
+          .innerJoin(properties, eq(units.propertyId, properties.id))
+          .where(eq(properties.ownerId, userId))
+          .groupBy(maintenanceRequests.status);
+      } else {
+        // Admin or other roles see all requests
+        results = await db
+          .select({
+            status: maintenanceRequests.status,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(maintenanceRequests)
+          .groupBy(maintenanceRequests.status);
       }
-      // Landlords can see all requests
-
-      // Get counts for each status
-      const baseQuery = db
-        .select({
-          status: maintenanceRequests.status,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(maintenanceRequests);
-
-      const results = await (whereCondition 
-        ? baseQuery.where(whereCondition).groupBy(maintenanceRequests.status)
-        : baseQuery.groupBy(maintenanceRequests.status));
 
       // Transform results into stats object
       const stats = {
@@ -99,7 +122,7 @@ export class MaintenanceController {
         conditions.push(eq(maintenanceRequests.priority, priority));
       }
 
-      // Build query with conditions
+      // Build query with conditions - include LEFT JOIN for workman to avoid N+1 queries
       const query = db
         .select({
           id: maintenanceRequests.id,
@@ -116,41 +139,33 @@ export class MaintenanceController {
           resolvedAt: maintenanceRequests.resolvedAt,
           propertyName: properties.name,
           unitNumber: units.unitNumber,
-          tenantFirstName: users.firstName,
-          tenantLastName: users.lastName,
+          tenantFirstName: sql<string>`tenant.first_name`,
+          tenantLastName: sql<string>`tenant.last_name`,
+          workmanFirstName: sql<string>`workman.first_name`,
+          workmanLastName: sql<string>`workman.last_name`,
         })
         .from(maintenanceRequests)
         .innerJoin(units, eq(maintenanceRequests.unitId, units.id))
         .innerJoin(properties, eq(units.propertyId, properties.id))
-        .innerJoin(users, eq(maintenanceRequests.tenantId, users.id))
+        .leftJoin(sql`users AS tenant`, sql`maintenance_requests.tenant_id = tenant.id`)
+        .leftJoin(sql`users AS workman`, sql`maintenance_requests.assigned_to = workman.id`)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(maintenanceRequests.createdAt));
 
       const requests = await query;
 
-      // Get workman info separately for assigned requests
-      const requestsWithWorkmen = await Promise.all(
-        requests.map(async (request) => {
-          let workmanName = null;
-          if (request.assignedTo) {
-            const workmanResults = await db
-              .select({ firstName: users.firstName, lastName: users.lastName })
-              .from(users)
-              .where(eq(users.id, request.assignedTo))
-              .limit(1);
-            if (workmanResults.length > 0) {
-              workmanName = `${workmanResults[0].firstName} ${workmanResults[0].lastName}`;
-            }
-          }
-          return {
-            ...request,
-            tenantName: `${request.tenantFirstName} ${request.tenantLastName}`,
-            workmanName,
-          };
-        })
-      );
+      // Format response with combined names
+      const formattedRequests = requests.map((request) => ({
+        ...request,
+        tenantName: request.tenantFirstName && request.tenantLastName
+          ? `${request.tenantFirstName} ${request.tenantLastName}`
+          : null,
+        workmanName: request.workmanFirstName && request.workmanLastName
+          ? `${request.workmanFirstName} ${request.workmanLastName}`
+          : null,
+      }));
 
-      res.json(requestsWithWorkmen);
+      res.json(formattedRequests);
     } catch (error) {
       logger.error('Error fetching maintenance requests:', error);
       next(error);
@@ -503,6 +518,22 @@ export class MaintenanceController {
 
   async getWorkmen(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+
+      if (!userId || !userRole) {
+        const error = new Error('Unauthorized') as ApiError;
+        error.statusCode = 401;
+        return next(error);
+      }
+
+      // Only landlords and admins can view the workmen directory
+      if (userRole !== 'landlord' && userRole !== 'admin') {
+        const error = new Error('Forbidden: Only landlords and admins can view workmen') as ApiError;
+        error.statusCode = 403;
+        return next(error);
+      }
+
       const workmen = await db
         .select({
           id: users.id,
