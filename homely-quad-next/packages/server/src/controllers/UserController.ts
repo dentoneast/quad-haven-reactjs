@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import { ApiError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { AuthRequest } from '../middleware/auth';
 
 export class UserController {
-  async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get user profile from the database
       const profile = {
@@ -28,7 +29,7 @@ export class UserController {
     }
   }
 
-  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -57,7 +58,7 @@ export class UserController {
     }
   }
 
-  async deleteProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async deleteProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would soft delete the user profile
       logger.info(`Profile deleted for user ${req.user?.id}`);
@@ -71,7 +72,7 @@ export class UserController {
     }
   }
 
-  async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getAllUsers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       // In a real app, you would get all users from the database
       const users: any[] = [];
@@ -86,7 +87,7 @@ export class UserController {
     }
   }
 
-  async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getUserById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -110,7 +111,7 @@ export class UserController {
     }
   }
 
-  async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -140,7 +141,7 @@ export class UserController {
     }
   }
 
-  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async deleteUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -156,7 +157,7 @@ export class UserController {
     }
   }
 
-  async updateUserRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateUserRole(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const { role } = req.body;

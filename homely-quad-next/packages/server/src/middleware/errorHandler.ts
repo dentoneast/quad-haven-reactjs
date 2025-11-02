@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 export interface ApiError extends Error {
   statusCode?: number;
   isOperational?: boolean;
+  details?: any;
 }
 
 export const errorHandler = (

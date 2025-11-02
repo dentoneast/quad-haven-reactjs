@@ -2,9 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { ApiError } from './errorHandler';
 
-interface AuthRequest extends Request {
+export interface AuthRequest extends Request {
   user?: {
-    id: string;
+    id: number;
     email: string;
     role: string;
   };

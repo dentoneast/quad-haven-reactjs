@@ -1,10 +1,12 @@
-import { Router } from 'express';
-import { param, body } from 'express-validator';
+import { Router, Response, NextFunction } from 'express';
+import { param, body, query } from 'express-validator';
 import { UserController } from '../controllers/UserController';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { MaintenanceController } from '../controllers/MaintenanceController';
+import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 const userController = new UserController();
+const maintenanceController = new MaintenanceController();
 
 // Validation middleware
 const validateUserUpdate = [
@@ -17,18 +19,21 @@ const validateUserUpdate = [
 // All routes require authentication
 router.use(authenticateToken);
 
-// User routes
-router.get('/profile', userController.getProfile);
-router.put('/profile', validateUserUpdate, userController.updateProfile);
-router.delete('/profile', userController.deleteProfile);
+// Public user profile routes (any authenticated user can access their own profile)
+router.get('/profile', (req: AuthRequest, res: Response, next: NextFunction) => userController.getProfile(req, res, next));
+router.put('/profile', validateUserUpdate, (req: AuthRequest, res: Response, next: NextFunction) => userController.updateProfile(req, res, next));
+router.delete('/profile', (req: AuthRequest, res: Response, next: NextFunction) => userController.deleteProfile(req, res, next));
 
-// Admin routes
+// Workmen list endpoint (accessible to landlords and admins for maintenance requests)
+router.get('/workmen', requireRole(['landlord', 'admin']), (req: AuthRequest, res: Response, next: NextFunction) => maintenanceController.getWorkmen(req, res, next));
+
+// Admin-only routes for user management
 router.use(requireRole(['admin']));
 
-router.get('/', userController.getAllUsers);
-router.get('/:id', param('id').isUUID(), userController.getUserById);
-router.put('/:id', param('id').isUUID(), validateUserUpdate, userController.updateUser);
-router.delete('/:id', param('id').isUUID(), userController.deleteUser);
-router.put('/:id/role', param('id').isUUID(), userController.updateUserRole);
+router.get('/', (req: AuthRequest, res: Response, next: NextFunction) => userController.getAllUsers(req, res, next));
+router.get('/:id', param('id').isInt(), (req: AuthRequest, res: Response, next: NextFunction) => userController.getUserById(req, res, next));
+router.put('/:id', param('id').isInt(), validateUserUpdate, (req: AuthRequest, res: Response, next: NextFunction) => userController.updateUser(req, res, next));
+router.delete('/:id', param('id').isInt(), (req: AuthRequest, res: Response, next: NextFunction) => userController.deleteUser(req, res, next));
+router.put('/:id/role', param('id').isInt(), (req: AuthRequest, res: Response, next: NextFunction) => userController.updateUserRole(req, res, next));
 
 export default router;

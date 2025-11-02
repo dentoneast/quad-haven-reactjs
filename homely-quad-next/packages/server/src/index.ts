@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { db } from './db';
 import { users } from '../../shared/schema';
+import maintenanceRoutes from './routes/maintenance';
+import userRoutes from './routes/user';
+import { notFoundHandler } from './middleware/notFoundHandler';
+import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
 dotenv.config();
@@ -66,6 +70,14 @@ app.get('/api/health', async (req, res) => {
     });
   }
 });
+
+// API Routes
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/users', userRoutes);
+
+// Error handling middleware
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start server
 async function startServer() {

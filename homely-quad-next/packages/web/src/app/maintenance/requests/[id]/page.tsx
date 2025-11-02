@@ -48,7 +48,7 @@ export default function MaintenanceRequestDetailPage() {
 
   const fetchWorkmen = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users?role=workman`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/workmen`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
