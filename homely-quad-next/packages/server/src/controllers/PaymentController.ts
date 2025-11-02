@@ -8,56 +8,86 @@ export class PaymentController {
     try {
       const user = (req as any).user;
       
-      let query = db
-        .select({
-          status: payments.status,
-          count: sql<number>`count(*)::int`,
-          totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
-        })
-        .from(payments);
-
+      let stats;
+      
       if (user.role === 'tenant') {
-        query = query
+        stats = await db
+          .select({
+            status: payments.status,
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
           .leftJoin(leases, eq(payments.leaseId, leases.id))
-          .where(eq(leases.tenantId, user.id));
+          .where(eq(leases.tenantId, user.id))
+          .groupBy(payments.status);
       } else if (user.role === 'landlord') {
-        query = query
+        stats = await db
+          .select({
+            status: payments.status,
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
           .leftJoin(leases, eq(payments.leaseId, leases.id))
           .leftJoin(units, eq(leases.unitId, units.id))
           .leftJoin(properties, eq(units.propertyId, properties.id))
-          .where(eq(properties.ownerId, user.id));
+          .where(eq(properties.ownerId, user.id))
+          .groupBy(payments.status);
+      } else {
+        stats = await db
+          .select({
+            status: payments.status,
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
+          .groupBy(payments.status);
       }
-
-      const stats = await query.groupBy(payments.status);
 
       const today = new Date();
-      const overdueCond = and(
-        eq(payments.status, 'pending'),
-        lte(payments.dueDate, today)
-      );
-
-      let overdueQuery = db
-        .select({
-          count: sql<number>`count(*)::int`,
-          totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
-        })
-        .from(payments);
+      let overdueResult;
 
       if (user.role === 'tenant') {
-        overdueQuery = overdueQuery
+        [overdueResult] = await db
+          .select({
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
           .leftJoin(leases, eq(payments.leaseId, leases.id))
-          .where(and(eq(leases.tenantId, user.id), overdueCond));
+          .where(and(
+            eq(leases.tenantId, user.id),
+            eq(payments.status, 'pending'),
+            lte(payments.dueDate, today)
+          ));
       } else if (user.role === 'landlord') {
-        overdueQuery = overdueQuery
+        [overdueResult] = await db
+          .select({
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
           .leftJoin(leases, eq(payments.leaseId, leases.id))
           .leftJoin(units, eq(leases.unitId, units.id))
           .leftJoin(properties, eq(units.propertyId, properties.id))
-          .where(and(eq(properties.ownerId, user.id), overdueCond));
+          .where(and(
+            eq(properties.ownerId, user.id),
+            eq(payments.status, 'pending'),
+            lte(payments.dueDate, today)
+          ));
       } else {
-        overdueQuery = overdueQuery.where(overdueCond);
+        [overdueResult] = await db
+          .select({
+            count: sql<number>`count(*)::int`,
+            totalAmount: sql<string>`COALESCE(sum(${payments.amount}), 0)`,
+          })
+          .from(payments)
+          .where(and(
+            eq(payments.status, 'pending'),
+            lte(payments.dueDate, today)
+          ));
       }
-
-      const [overdueResult] = await overdueQuery;
 
       const formattedStats = {
         pending: 0,
@@ -105,7 +135,23 @@ export class PaymentController {
       const user = (req as any).user;
       const { status, leaseId } = req.query;
 
-      let query = db
+      const conditions = [];
+
+      if (user.role === 'tenant') {
+        conditions.push(eq(leases.tenantId, user.id));
+      } else if (user.role === 'landlord') {
+        conditions.push(eq(properties.ownerId, user.id));
+      }
+
+      if (status) {
+        conditions.push(eq(payments.status, status as string));
+      }
+
+      if (leaseId) {
+        conditions.push(eq(payments.leaseId, parseInt(leaseId as string)));
+      }
+
+      const baseSelect = db
         .select({
           payment: payments,
           lease: {
@@ -135,30 +181,11 @@ export class PaymentController {
         .leftJoin(leases, eq(payments.leaseId, leases.id))
         .leftJoin(units, eq(leases.unitId, units.id))
         .leftJoin(properties, eq(units.propertyId, properties.id))
-        .leftJoin(users, eq(leases.tenantId, users.id))
-        .orderBy(desc(payments.dueDate));
+        .leftJoin(users, eq(leases.tenantId, users.id));
 
-      const conditions = [];
-
-      if (user.role === 'tenant') {
-        conditions.push(eq(leases.tenantId, user.id));
-      } else if (user.role === 'landlord') {
-        conditions.push(eq(properties.ownerId, user.id));
-      }
-
-      if (status) {
-        conditions.push(eq(payments.status, status as string));
-      }
-
-      if (leaseId) {
-        conditions.push(eq(payments.leaseId, parseInt(leaseId as string)));
-      }
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-
-      const results = await query;
+      const results = conditions.length > 0
+        ? await baseSelect.where(and(...conditions)).orderBy(desc(payments.dueDate))
+        : await baseSelect.orderBy(desc(payments.dueDate));
 
       const formattedPayments = results.map((r) => ({
         ...r.payment,
@@ -390,7 +417,15 @@ export class PaymentController {
     try {
       const user = (req as any).user;
 
-      let query = db
+      const conditions = [eq(payments.status, 'pending')];
+
+      if (user.role === 'tenant') {
+        conditions.push(eq(leases.tenantId, user.id));
+      } else if (user.role === 'landlord') {
+        conditions.push(eq(properties.ownerId, user.id));
+      }
+
+      const results = await db
         .select({
           payment: payments,
           lease: {
@@ -418,19 +453,8 @@ export class PaymentController {
         .leftJoin(units, eq(leases.unitId, units.id))
         .leftJoin(properties, eq(units.propertyId, properties.id))
         .leftJoin(users, eq(leases.tenantId, users.id))
+        .where(and(...conditions))
         .orderBy(payments.dueDate);
-
-      const conditions = [eq(payments.status, 'pending')];
-
-      if (user.role === 'tenant') {
-        conditions.push(eq(leases.tenantId, user.id));
-      } else if (user.role === 'landlord') {
-        conditions.push(eq(properties.ownerId, user.id));
-      }
-
-      query = query.where(and(...conditions));
-
-      const results = await query;
 
       const formattedPayments = results.map((r) => ({
         ...r.payment,
@@ -452,7 +476,18 @@ export class PaymentController {
       const user = (req as any).user;
       const today = new Date();
 
-      let query = db
+      const conditions = [
+        eq(payments.status, 'pending'),
+        lte(payments.dueDate, today),
+      ];
+
+      if (user.role === 'tenant') {
+        conditions.push(eq(leases.tenantId, user.id));
+      } else if (user.role === 'landlord') {
+        conditions.push(eq(properties.ownerId, user.id));
+      }
+
+      const results = await db
         .select({
           payment: payments,
           lease: {
@@ -480,22 +515,8 @@ export class PaymentController {
         .leftJoin(units, eq(leases.unitId, units.id))
         .leftJoin(properties, eq(units.propertyId, properties.id))
         .leftJoin(users, eq(leases.tenantId, users.id))
+        .where(and(...conditions))
         .orderBy(payments.dueDate);
-
-      const conditions = [
-        eq(payments.status, 'pending'),
-        lte(payments.dueDate, today),
-      ];
-
-      if (user.role === 'tenant') {
-        conditions.push(eq(leases.tenantId, user.id));
-      } else if (user.role === 'landlord') {
-        conditions.push(eq(properties.ownerId, user.id));
-      }
-
-      query = query.where(and(...conditions));
-
-      const results = await query;
 
       const formattedPayments = results.map((r) => ({
         ...r.payment,
