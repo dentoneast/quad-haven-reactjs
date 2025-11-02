@@ -21,6 +21,7 @@ The project is structured as a monorepo containing:
 -   **Maintenance Request System**: Full-stack implementation including a dashboard, request listing, detail views, and a submission form with lifecycle management (pending, approved, in_progress, completed) and priority levels.
 -   **Property & Lease Management**: Full CRUD operations for properties and leases, including unit management, status tracking, and filtering capabilities.
 -   **Authentication & User Management**: Cross-platform JWT-based authentication with token refresh, role selection during registration, password reset flows, and profile management.
+-   **Database Seeding Infrastructure**: Comprehensive sample data system using Drizzle ORM with 10 users, 5 properties, 10 units, 5 leases, 6 maintenance requests, 12 payments, and 11 messages. Supports rapid development, testing, and demonstrations with realistic data across all user roles. Scripts available: `npm run db:seed` and `npm run db:reset`.
 -   **Type Safety**: Extensive use of TypeScript across all packages for improved code quality and maintainability.
 -   **Database**: PostgreSQL managed with Drizzle ORM, featuring a comprehensive schema for users, properties, units, leases, maintenance requests, and payments.
 -   **UI/UX**: Responsive design principles applied across all web components, with color-coded badges and visual indicators for status and priority.

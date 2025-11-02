@@ -9,6 +9,7 @@ This folder contains all documentation related to the phased migration of the Ho
 
 ### Phase Summaries
 - **phase1-summary.md** - Foundation & Infrastructure (Shared packages, types, API client)
+- **phase1.5-summary.md** - Database Seeding & Test Data (Sample data infrastructure for development)
 - **phase2-summary.md** - Authentication & User Management (Login, registration, profile management)
 - **phase3-summary.md** - Property & Lease Management (CRUD operations, unit management)
 - **phase4-summary.md** - Maintenance Request System (Full-stack implementation with backend APIs)
@@ -18,7 +19,7 @@ This folder contains all documentation related to the phased migration of the Ho
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 1 | ✅ Complete | Foundation & Infrastructure |
-| Phase 1.5 | 📋 Planned | Database Seeding & Test Data |
+| Phase 1.5 | ✅ Complete | Database Seeding & Test Data |
 | Phase 2 | ✅ Complete | Authentication & User Management |
 | Phase 3 | ✅ Complete | Property & Lease Management |
 | Phase 4 | ✅ Complete | Maintenance Request System |

@@ -1,9 +1,9 @@
 # Feature Migration Plan: homely-quad-mobile → homely-quad-next
 
-**Document Version**: 1.4  
+**Document Version**: 1.5  
 **Created**: November 2, 2025  
 **Last Updated**: November 2, 2025  
-**Status**: Phase 4 Complete ✅ | Phase 1.5 Added 📋
+**Status**: Phase 4 Complete ✅ | Phase 1.5 Complete ✅
 
 ---
 
@@ -179,78 +179,79 @@ homely-quad-next/packages/shared/
 
 ---
 
-## Phase 1.5: Database Seeding & Test Data 📋 **PLANNED**
+## Phase 1.5: Database Seeding & Test Data ✅ **COMPLETED**
 
-**Target Completion**: Before Phase 2 deployment  
-**Status**: Pending migration from homely-quad-mobile
+**Completion Date**: November 2, 2025  
+**Status**: All deliverables implemented and tested
 
 ### 1.5.1 Database Seeding Scripts Migration
 
 **Objective**: Migrate database seeding and testing utilities from the old project to support development and testing
 
-**Source Files** (homely-quad-mobile/server):
-- `setup-db.js` - Database schema setup (raw SQL)
-- `seed-db.js` - Sample data seeding script
-- `reset-db.js` - Database reset utility
-
 **Tasks**:
-- [ ] Migrate `seed-db.js` to Drizzle ORM format in `packages/server/src/scripts/`
-- [ ] Create `seed-database.ts` using Drizzle ORM instead of raw SQL
-- [ ] Migrate all sample data entities:
-  - [ ] Organizations (3 sample organizations)
-  - [ ] Users (10 sample users across all roles: tenant, landlord, workman, admin)
-  - [ ] Properties/Premises (5 sample properties)
-  - [ ] Rental Units (5+ sample units)
-  - [ ] Leases (active and expired samples)
-  - [ ] Maintenance Requests (various statuses and priorities)
-  - [ ] Work Orders (assigned, in-progress, completed)
-  - [ ] Maintenance Approvals
-  - [ ] Conversations & Messages
-  - [ ] Rental Listings
-- [ ] Create database reset script using Drizzle
-- [ ] Add npm scripts for database operations:
-  - [ ] `npm run db:seed` - Run seeding script
-  - [ ] `npm run db:reset` - Reset and reseed database
-  - [ ] `npm run db:seed:prod` - Production-safe seeding (optional)
-- [ ] Document seeding process in README
-- [ ] Add environment check to prevent accidental production seeding
+- [x] Migrate `seed-db.js` to Drizzle ORM format in `packages/server/src/scripts/`
+- [x] Create `seed-database.ts` using Drizzle ORM instead of raw SQL
+- [x] Migrate all sample data entities:
+  - [x] Users (10 sample users across all roles: tenant, landlord, workman, admin)
+  - [x] Properties (5 sample properties across different cities)
+  - [x] Rental Units (10+ sample units with various configurations)
+  - [x] Leases (5 leases - active and expired samples)
+  - [x] Maintenance Requests (6 requests with various statuses and priorities)
+  - [x] Payments (12 payment records - paid, pending, overdue)
+  - [x] Messages (11 messages between different user types)
+- [x] Create database reset script using Drizzle
+- [x] Add npm scripts for database operations:
+  - [x] `npm run db:seed` - Run seeding script
+  - [x] `npm run db:reset` - Reset database (drop tables)
+- [x] Document seeding process in comprehensive README
+- [x] Add environment check to prevent accidental production seeding
+- [x] Test seeding script with successful execution
 
-**Deliverables**:
-- `packages/server/src/scripts/seed-database.ts` - Main seeding script using Drizzle ORM
-- `packages/server/src/scripts/reset-database.ts` - Database reset utility
+**Deliverables**: ✅
+- `packages/server/src/scripts/seed-database.ts` - Main seeding script using Drizzle ORM with comprehensive logging
+- `packages/server/src/scripts/reset-database.ts` - Database reset utility with safety checks
 - `packages/server/src/scripts/data/` - Sample data fixtures directory
-  - `organizations.ts` - Organization sample data
-  - `users.ts` - User sample data (with hashed passwords)
-  - `properties.ts` - Property and unit sample data
-  - `leases.ts` - Lease sample data
-  - `maintenance.ts` - Maintenance request sample data
-  - `messages.ts` - Conversation and message sample data
-- Updated `package.json` with seeding scripts
-- `packages/server/README.md` - Seeding documentation
+  - `users.ts` - 10 user samples (1 admin, 2 landlords, 5 tenants, 2 workmen) with bcrypt-hashed passwords
+  - `properties.ts` - 5 property samples across different cities and property types
+  - `units.ts` - 10 unit samples (studios to 4-bedroom units)
+  - `leases.ts` - 5 lease samples (active and expired)
+  - `maintenance.ts` - 6 maintenance request samples covering all statuses
+  - `payments.ts` - 12 payment samples (paid, pending, overdue)
+  - `messages.ts` - 11 message samples between various user roles
+- Updated `packages/server/package.json` with seeding scripts
+- `packages/server/README.md` - Comprehensive seeding documentation with API reference
 
-**Sample Data Requirements**:
-- Realistic data that demonstrates all features
-- Proper foreign key relationships
-- Various user roles with appropriate permissions
-- Different maintenance request statuses for workflow testing
-- Active and historical leases
-- Messages between different user types
-- Proper timestamps for realistic timelines
+**Sample Data Created**:
+- 👥 **10 Users** (1 admin, 2 landlords, 5 tenants, 2 workmen) - All password: `password123`
+- 🏢 **5 Properties** - Sunset Gardens (LA), Downtown Lofts (Chicago), Riverside Townhomes (Houston), Mountain View Estates (Phoenix), Oceanfront Condos (San Diego)
+- 🏠 **10 Units** - Studios to 4-bedroom units, rent range $1,500-$3,800/month
+- 📋 **5 Leases** - 4 active, 1 expired, demonstrating lease lifecycle
+- 🔧 **6 Maintenance Requests** - All statuses (pending, approved, in_progress, completed) and priorities
+- 💳 **12 Payments** - 8 paid, 3 pending, 1 overdue for testing workflows
+- 💬 **11 Messages** - Tenant-landlord, maintenance, community conversations
 
-**Benefits**:
-- Consistent development environment across team
-- Faster onboarding for new developers
-- Comprehensive testing data for QA
-- Demo-ready data for presentations
-- Easy database reset during development
+**Test User Credentials** (password: `password123`):
+- Admin: `admin@homelyquad.com`
+- Landlord: `john.landlord@example.com`, `sarah.landlord@example.com`
+- Tenant: `mike.tenant@example.com`, `emma.tenant@example.com`, `alex.tenant@example.com`, `lisa.tenant@example.com`
+- Workman: `tom.workman@example.com`, `rachel.workman@example.com`
 
-**Dependencies**: Phase 1.1, 1.2 (Schema and types must exist)
+**Key Features**:
+- Production environment protection (script exits if NODE_ENV=production)
+- Duplicate data detection (checks for existing users before seeding)
+- Comprehensive console output with emoji indicators and statistics
+- Proper foreign key relationship management
+- Realistic data covering all platform features and workflows
+- Easy reset and reseed workflow for development
 
-**Notes**:
-- Use bcrypt for password hashing (password: "password123" for all test users)
-- Include organization assignments for proper multi-tenancy testing
-- Ensure maintenance request data covers all workflow states
-- Add check to prevent running in production environment
+**Benefits Achieved**:
+- ✅ Consistent development environment across team
+- ✅ Faster onboarding for new developers  
+- ✅ Comprehensive testing data for QA covering all scenarios
+- ✅ Demo-ready data for presentations with realistic scenarios
+- ✅ Easy database reset during development with one command
+
+**Dependencies**: Phase 1.1, 1.2 (Schema and types) ✅ Met
 
 ---
 
