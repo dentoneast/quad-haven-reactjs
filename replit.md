@@ -31,7 +31,7 @@ Homely Quad is a comprehensive rental property management platform built as a mo
 2. **Replit Configuration**:
    - Modified package scripts to bind to `0.0.0.0:5000` for Replit compatibility
    - Added `allowedDevOrigins` configuration in `next.config.js` to handle Replit's cross-origin requests
-   - Configured workflow to run Next.js dev server from `homely-quad-web/packages/web`
+   - Configured workflow to run Next.js dev server from `homely-quad-next/packages/web`
    - Set up backend server workflow on port 3001
 
 3. **Database Setup**:
@@ -61,14 +61,14 @@ Homely Quad is a comprehensive rental property management platform built as a mo
 
 6. **Deployment**:
    - Configured autoscale deployment target
-   - Set build command: `cd homely-quad-web/packages/web && npm run build`
-   - Set start command: `cd homely-quad-web/packages/web && npm run start`
+   - Set build command: `cd homely-quad-next/packages/web && npm run build`
+   - Set start command: `cd homely-quad-next/packages/web && npm run start`
 
 ## Project Architecture
 
 ### Directory Structure
 ```
-homely-quad-web/
+homely-quad-next/
 ├── packages/
 │   ├── web/          # Next.js web application (ACTIVE)
 │   ├── mobile/       # React Native mobile app
@@ -89,14 +89,14 @@ homely-quad-web/
 ## Environment Variables
 
 ### Web Application
-Located in `homely-quad-web/packages/web/`:
+Located in `homely-quad-next/packages/web/`:
 - `NEXT_PUBLIC_API_URL`: Backend API endpoint (currently: http://localhost:3001/api)
 - `NEXT_PUBLIC_APP_NAME`: Application name
 - `NEXT_PUBLIC_APP_VERSION`: Version number
 - Feature flags for analytics, social login, etc.
 
 ### Server Application
-Located in `homely-quad-web/packages/server/`:
+Located in `homely-quad-next/packages/server/`:
 - `DATABASE_URL`: PostgreSQL connection string ✅ **Configured via Replit Secrets**
 - `JWT_SECRET`: JWT signing secret ✅ **Configured via Replit Secrets**
 - `JWT_REFRESH_SECRET`: Refresh token secret ✅ **Configured via Replit Secrets**
@@ -109,7 +109,7 @@ Located in `homely-quad-web/packages/server/`:
 ### Running the Application
 The web application automatically starts via the configured workflow:
 ```bash
-cd homely-quad-web/packages/web && npm run dev
+cd homely-quad-next/packages/web && npm run dev
 ```
 
 Access at: `https://<your-repl-url>.replit.dev`
@@ -117,22 +117,22 @@ Access at: `https://<your-repl-url>.replit.dev`
 ### Common Commands
 ```bash
 # Install dependencies
-cd homely-quad-web && npm install
+cd homely-quad-next && npm install
 
 # Run web dev server
-cd homely-quad-web/packages/web && npm run dev
+cd homely-quad-next/packages/web && npm run dev
 
 # Run server dev
-cd homely-quad-web/packages/server && npm run dev
+cd homely-quad-next/packages/server && npm run dev
 
 # Run tests
-cd homely-quad-web && npm test
+cd homely-quad-next && npm test
 
 # Type checking
-cd homely-quad-web && npm run type-check
+cd homely-quad-next && npm run type-check
 
 # Build for production
-cd homely-quad-web/packages/web && npm run build
+cd homely-quad-next/packages/web && npm run build
 ```
 
 ## Known Issues & Warnings
@@ -170,7 +170,7 @@ cd homely-quad-web/packages/web && npm run build
 - **Deployment**: Replit autoscale deployment
 
 ## Support & Documentation
-- Project documentation: `/homely-quad-web/docs/`
+- Project documentation: `/homely-quad-next/docs/`
 - API documentation: See server package README
 - Web app documentation: See web package README
-- Migration notes: `/homely-quad-web/MIGRATION.md`
+- Migration notes: `/homely-quad-next/MIGRATION.md`

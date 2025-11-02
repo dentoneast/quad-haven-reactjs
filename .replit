@@ -40,33 +40,29 @@ args = "server"
 name = "web"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd homely-quad-web/packages/web && npm run dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd homely-quad-next/packages/web && npm run dev"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "server"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd homely-quad-web/packages/server && npm run dev"
-waitForPort = 3001
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd homely-quad-next/packages/server && npm run dev"
+waitForPort = 3001
 
 [[ports]]
 localPort = 3001
 externalPort = 3001
-
-[[ports]]
-localPort = 5000
-externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"

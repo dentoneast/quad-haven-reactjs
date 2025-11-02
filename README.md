@@ -8,7 +8,7 @@ This repository contains multiple packages organized as follows:
 
 ```
 .
-├── homely-quad-web/          # Monorepo for web and backend
+├── homely-quad-next/         # Monorepo for web and backend
 │   ├── packages/
 │   │   ├── web/              # Next.js frontend application
 │   │   ├── server/           # Express backend API
@@ -72,7 +72,7 @@ The application uses PostgreSQL with the following tables:
 
 2. **Install dependencies**
    ```bash
-   cd homely-quad-web
+   cd homely-quad-next
    npm install --legacy-peer-deps
    ```
 
@@ -90,7 +90,7 @@ The application uses PostgreSQL with the following tables:
 
 4. **Initialize the database**
    ```bash
-   cd homely-quad-web/packages/server
+   cd homely-quad-next/packages/server
    npm run db:push
    ```
 
@@ -100,33 +100,33 @@ The application uses PostgreSQL with the following tables:
 
 **Web Application** (runs on port 5000):
 ```bash
-cd homely-quad-web/packages/web
+cd homely-quad-next/packages/web
 npm run dev
 ```
 
 **Backend Server** (runs on port 3001):
 ```bash
-cd homely-quad-web/packages/server
+cd homely-quad-next/packages/server
 npm run dev
 ```
 
 **Mobile App**:
 ```bash
-cd homely-quad-web/packages/mobile
+cd homely-quad-next/packages/mobile
 npm start
 ```
 
 #### Production Build
 
 ```bash
-cd homely-quad-web/packages/web
+cd homely-quad-next/packages/web
 npm run build
 npm run start
 ```
 
 ## 📝 Available Scripts
 
-### Monorepo Root (`homely-quad-web/`)
+### Monorepo Root (`homely-quad-next/`)
 ```bash
 npm install              # Install all dependencies
 npm test                 # Run all tests
@@ -134,7 +134,7 @@ npm run type-check       # Type check all packages
 npm run lint             # Lint all packages
 ```
 
-### Web Package (`homely-quad-web/packages/web/`)
+### Web Package (`homely-quad-next/packages/web/`)
 ```bash
 npm run dev              # Start development server
 npm run build            # Build for production
@@ -143,7 +143,7 @@ npm run lint             # Lint code
 npm run type-check       # Type check
 ```
 
-### Server Package (`homely-quad-web/packages/server/`)
+### Server Package (`homely-quad-next/packages/server/`)
 ```bash
 npm run dev              # Start development server with hot reload
 npm run build            # Build TypeScript to JavaScript
@@ -152,7 +152,7 @@ npm run db:push          # Push schema changes to database
 npm run db:generate      # Generate migration files
 ```
 
-### Shared Package (`homely-quad-web/packages/shared/`)
+### Shared Package (`homely-quad-next/packages/shared/`)
 ```bash
 npm run build            # Build shared utilities
 npm run dev              # Watch mode for development
@@ -174,7 +174,7 @@ npm test                 # Run tests
 ## 🗄️ Database Management
 
 ### Migrations
-The project uses Drizzle ORM for database management. Migration files are stored in `homely-quad-web/packages/server/drizzle/`.
+The project uses Drizzle ORM for database management. Migration files are stored in `homely-quad-next/packages/server/drizzle/`.
 
 **Push schema changes** (development):
 ```bash
@@ -187,7 +187,7 @@ npm run db:generate
 ```
 
 ### Schema Definition
-Database schema is defined in `homely-quad-web/packages/shared/schema.ts` and shared across all packages.
+Database schema is defined in `homely-quad-next/packages/shared/schema.ts` and shared across all packages.
 
 ## 🔐 Security
 
@@ -213,7 +213,7 @@ POST /api/auth/logout
 ```
 
 ### Properties, Users, Leases, etc.
-API documentation coming soon. See `homely-quad-web/packages/server/src/routes/` for available endpoints.
+API documentation coming soon. See `homely-quad-next/packages/server/src/routes/` for available endpoints.
 
 ## 📱 Mobile Application
 
@@ -223,8 +223,8 @@ The mobile application is built with React Native and Expo, providing native iOS
 
 The application is configured for deployment on Replit with autoscale settings:
 
-- **Build Command**: `cd homely-quad-web/packages/web && npm run build`
-- **Start Command**: `cd homely-quad-web/packages/web && npm run start`
+- **Build Command**: `cd homely-quad-next/packages/web && npm run build`
+- **Start Command**: `cd homely-quad-next/packages/web && npm run start`
 - **Deployment Type**: Autoscale (stateless)
 
 For production deployments, ensure all environment variables are properly configured in Replit Secrets.
@@ -232,7 +232,7 @@ For production deployments, ensure all environment variables are properly config
 ## 📚 Documentation
 
 - **Project Documentation**: See `replit.md` for detailed project information
-- **Migration Guide**: See `homely-quad-web/MIGRATION.md` for Vercel to Replit migration notes
+- **Migration Guide**: See `homely-quad-next/MIGRATION.md` for Vercel to Replit migration notes
 - **API Documentation**: Coming soon
 - **Package READMEs**: Each package has its own README with specific details
 
