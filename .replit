@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "bash", "web"]
+modules = ["nodejs-20", "bash", "web", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -32,6 +32,10 @@ author = "agent"
 task = "workflow.run"
 args = "web"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "server"
+
 [[workflows.workflow]]
 name = "web"
 author = "agent"
@@ -44,9 +48,29 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd homely-quad-web/packages/server && npm run dev"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 38073
+externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"

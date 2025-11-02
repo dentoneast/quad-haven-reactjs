@@ -12,10 +12,13 @@ Homely Quad is a comprehensive rental property management platform built as a mo
 **Last Updated**: November 2, 2025
 
 ### Active Components
-- Web application running on port 5000
-- Development workflow configured and operational
-- Next.js updated to v14.2.33 for security patches
-- Production deployment settings configured
+- ✅ Web application running on port 5000
+- ✅ Backend server running on port 3001
+- ✅ PostgreSQL database configured with Drizzle ORM
+- ✅ JWT authentication secrets configured
+- ✅ Development workflows operational (web + server)
+- ✅ Next.js updated to v14.2.33 for security patches
+- ✅ Production deployment settings configured
 
 ## Recent Changes
 
@@ -29,12 +32,34 @@ Homely Quad is a comprehensive rental property management platform built as a mo
    - Modified package scripts to bind to `0.0.0.0:5000` for Replit compatibility
    - Added `allowedDevOrigins` configuration in `next.config.js` to handle Replit's cross-origin requests
    - Configured workflow to run Next.js dev server from `homely-quad-web/packages/web`
+   - Set up backend server workflow on port 3001
 
-3. **Code Improvements**:
+3. **Database Setup**:
+   - Created PostgreSQL database using Replit's built-in database integration
+   - Migrated from Prisma to Drizzle ORM (Replit recommendation)
+   - Created comprehensive schema with 7 tables:
+     * `users`: User accounts with authentication
+     * `properties`: Property listings
+     * `units`: Individual rental units within properties
+     * `leases`: Lease agreements
+     * `maintenance_requests`: Maintenance tracking
+     * `payments`: Payment records
+     * `messages`: User messaging system
+   - Configured Drizzle with Neon serverless PostgreSQL driver
+   - Successfully pushed schema to database
+
+4. **Authentication & Security**:
+   - Configured JWT_SECRET and JWT_REFRESH_SECRET in Replit Secrets
+   - Added environment variable validation to enforce secret configuration
+   - Server fails fast if required secrets are missing (security best practice)
+
+5. **Code Improvements**:
    - Migrated viewport metadata from deprecated metadata export to new `viewport` export in layout.tsx
+   - Updated backend server to test database connectivity on startup
+   - Added health check endpoint with database status
    - Set up environment variables for development
 
-4. **Deployment**:
+6. **Deployment**:
    - Configured autoscale deployment target
    - Set build command: `cd homely-quad-web/packages/web && npm run build`
    - Set start command: `cd homely-quad-web/packages/web && npm run start`
@@ -56,7 +81,7 @@ homely-quad-web/
 
 ### Technology Stack
 - **Frontend**: Next.js 14.2.33, React 18.2, TypeScript, TailwindCSS
-- **Backend**: Node.js, Express, Prisma ORM, PostgreSQL
+- **Backend**: Node.js, Express, Drizzle ORM, PostgreSQL
 - **Mobile**: React Native, Expo
 - **Testing**: Jest, React Testing Library
 - **Package Manager**: npm (workspace-based monorepo)
@@ -72,12 +97,12 @@ Located in `homely-quad-web/packages/web/`:
 
 ### Server Application
 Located in `homely-quad-web/packages/server/`:
-- `DATABASE_URL`: PostgreSQL connection string ⚠️ **Required - Not yet configured**
-- `JWT_SECRET`: JWT signing secret ⚠️ **Required - Not yet configured**
-- `JWT_REFRESH_SECRET`: Refresh token secret ⚠️ **Required - Not yet configured**
+- `DATABASE_URL`: PostgreSQL connection string ✅ **Configured via Replit Secrets**
+- `JWT_SECRET`: JWT signing secret ✅ **Configured via Replit Secrets**
+- `JWT_REFRESH_SECRET`: Refresh token secret ✅ **Configured via Replit Secrets**
 - Email and Cloudinary configuration (optional for full functionality)
 
-**Note**: Sensitive environment variables (API keys, secrets) need to be configured via Replit Secrets.
+**Note**: Required secrets are configured and validated on server startup. Server will fail fast if required secrets are missing.
 
 ## Development Workflow
 
@@ -116,33 +141,28 @@ cd homely-quad-web/packages/web && npm run build
 - ✅ Cross-origin warnings from Replit proxy (fixed via `allowedDevOrigins` config)
 - ✅ Viewport metadata deprecation (migrated to new format)
 - ✅ Next.js security vulnerabilities (updated to v14.2.33)
+- ✅ Database configured and schema deployed
+- ✅ JWT secrets configured and validated
+- ✅ Backend server running on port 3001
 
 ### Pending
 - ⚠️ One moderate severity npm vulnerability in nodemailer (optional dependency)
-- ⚠️ Database not yet configured - `DATABASE_URL` needs to be set
-- ⚠️ JWT secrets need to be configured for authentication to work
-- ⚠️ Backend server not currently running (only frontend is active)
+- ⚠️ Peer dependency conflicts requiring `--legacy-peer-deps` flag for npm install
 
 ## Next Steps
 
-1. **Configure Database**:
-   - Set up PostgreSQL database using Replit's database tools
-   - Add `DATABASE_URL` to Replit Secrets
-   - Run database migrations: `cd homely-quad-web/packages/server && npm run db:setup`
-
-2. **Configure Authentication**:
-   - Add `JWT_SECRET` and `JWT_REFRESH_SECRET` to Replit Secrets
-   - Configure CORS origins if running separate backend
-
-3. **Optional Services** (for full functionality):
+1. **Optional Services** (for full functionality):
    - Configure email service (SMTP credentials)
    - Set up Cloudinary for image uploads
    - Add Google Maps API key for location features
    - Configure payment gateways (Stripe, PayPal)
 
-4. **Backend Server**:
-   - Once database is configured, set up workflow for backend server
-   - Update API URL environment variable to point to backend
+2. **Backend API Development**:
+   - Implement authentication endpoints (register, login, refresh)
+   - Build property management APIs
+   - Add lease and payment management endpoints
+   - Create maintenance request endpoints
+   - Develop messaging system endpoints
 
 ## User Preferences
 - **Development Style**: Modern TypeScript with strict typing
