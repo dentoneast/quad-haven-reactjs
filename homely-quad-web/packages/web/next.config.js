@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@homely-quad/shared'],
+  allowedDevOrigins: process.env.REPLIT_DEV_DOMAIN 
+    ? [process.env.REPLIT_DEV_DOMAIN, `https://${process.env.REPLIT_DEV_DOMAIN}`, `http://${process.env.REPLIT_DEV_DOMAIN}`]
+    : ['*'],
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

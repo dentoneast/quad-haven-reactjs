@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   description: 'Comprehensive rental property management platform for landlords, tenants, and maintenance teams.',
   keywords: ['rental', 'property management', 'landlord', 'tenant', 'maintenance'],
   authors: [{ name: 'Homely Quad Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
