@@ -91,7 +91,7 @@ export default function PaymentDetailPage() {
   }
 
   const isOverdue = payment.status === 'pending' && new Date(payment.dueDate) < new Date();
-  const canRecordPayment = (user?.role === 'landlord' || user?.role === 'admin' || user?.role === 'tenant') && payment.status === 'pending';
+  const canRecordPayment = (user?.role === 'landlord' || user?.role === 'admin') && payment.status === 'pending';
 
   return (
     <DashboardLayout title="Payment Details" showBackButton backHref="/payments">
