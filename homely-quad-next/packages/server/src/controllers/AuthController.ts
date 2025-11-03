@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
+import { eq } from 'drizzle-orm';
+import { db } from '../db';
+import { users } from '../../../shared/schema';
 import { ApiError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 
@@ -17,23 +20,20 @@ export class AuthController {
 
       const { email, password } = req.body;
 
-      // In a real app, you would query the database here
-      // For now, we'll use mock data
-      const user = {
-        id: '1',
-        email: 'user@example.com',
-        password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'user',
-        isActive: true,
-      };
+      // Query the database for the user
+      const userResults = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
 
-      if (email !== user.email) {
+      if (userResults.length === 0) {
         const error = new Error('Invalid credentials') as ApiError;
         error.statusCode = 401;
         return next(error);
       }
+
+      const user = userResults[0];
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
