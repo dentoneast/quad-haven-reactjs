@@ -4,9 +4,11 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { db } from './db';
 import { users } from '../../shared/schema';
+import authRoutes from './routes/auth';
 import maintenanceRoutes from './routes/maintenance';
 import userRoutes from './routes/user';
 import paymentRoutes from './routes/payments';
+import propertyRoutes from './routes/property';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -73,9 +75,12 @@ app.get('/api/health', async (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/leases', propertyRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
