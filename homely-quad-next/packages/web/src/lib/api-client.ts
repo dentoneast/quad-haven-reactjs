@@ -105,7 +105,14 @@ export class ApiClient {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      return await response.json();
+      const jsonResponse = await response.json();
+      
+      // Unwrap the response if it has the structure {success, data, message}
+      if (jsonResponse && typeof jsonResponse === 'object' && 'data' in jsonResponse) {
+        return jsonResponse.data;
+      }
+      
+      return jsonResponse;
     } catch (error) {
       if (error instanceof Error) {
         throw error;
