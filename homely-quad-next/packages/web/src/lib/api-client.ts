@@ -45,8 +45,6 @@ export class ApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = this.getHeaders();
 
-    console.log('API Request:', { method, url, baseUrl: this.baseUrl, endpoint });
-
     try {
       const response = await fetch(url, {
         method,

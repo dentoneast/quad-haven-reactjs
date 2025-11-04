@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User, LoginData, RegisterData } from '@homely-quad/shared/types';
+import type { User, LoginCredentials, RegisterData } from '@homely-quad/shared/types';
 import { createApiClient } from '../lib/api-client';
 
 interface AuthContextType {
@@ -10,7 +10,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginData) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
@@ -66,13 +66,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        apiClient.setTokens(storedToken, storedRefreshToken);
+      if (storedToken && storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && typeof parsedUser === 'object' && parsedUser.id) {
+          setToken(storedToken);
+          setUser(parsedUser);
+          apiClient.setTokens(storedToken, storedRefreshToken);
+        } else {
+          clearAuth();
+        }
+      } else {
+        clearAuth();
       }
     } catch (error) {
-      console.error('Error loading stored auth:', error);
+      console.error('Error loading stored auth - clearing invalid data:', error);
       clearAuth();
     } finally {
       setIsLoading(false);
@@ -102,9 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     apiClient.setTokens(null, null);
   };
 
-  const login = async (credentials: LoginData) => {
+  const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('Attempting login with API URL:', process.env.NEXT_PUBLIC_API_URL);
       const response = await apiClient.post<{ token: string; refreshToken: string; user: User }>('/auth/login', credentials);
       
       setToken(response.token);
@@ -112,11 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       apiClient.setTokens(response.token, response.refreshToken || null);
       storeAuth(response.token, response.refreshToken || '', response.user);
     } catch (error) {
-      console.error('Login error details:', {
-        error,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('Login failed:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
