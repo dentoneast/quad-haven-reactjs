@@ -8,6 +8,14 @@ Homely Quad is a comprehensive rental property management platform designed as a
 - **Package Manager**: npm (workspace monorepo)
 - **Deployment**: Replit autoscale deployment
 
+## Environment Configuration
+- **API Proxy**: Frontend uses Next.js API proxy route (`/api/[...proxy]`) to forward requests to internal backend
+- **Environment Variable**: `NEXT_PUBLIC_API_URL=/api` (set in web workflow command to override Replit OS environment)
+- **Port Configuration**: Only port 5000 is publicly accessible; backend (port 3001) is internal-only
+- **Workflow Commands**: 
+  - Web: `cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev`
+  - Server: `cd homely-quad-next/packages/server && npm run dev`
+
 ## System Architecture
 The project is structured as a monorepo containing:
 -   **Web Application**: A Next.js 14.2.33 frontend (TypeScript) for a rich user experience.
