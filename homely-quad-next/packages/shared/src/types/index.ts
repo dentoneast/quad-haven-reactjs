@@ -28,16 +28,17 @@ export interface ApiError {
 export interface User {
   id: number;
   email: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
-  date_of_birth?: string;
+  dateOfBirth?: string;
   address?: string;
-  profile_image_url?: string;
-  is_verified: boolean;
-  user_type?: 'tenant' | 'landlord' | 'admin' | 'workman';
-  created_at: string;
-  updated_at?: string;
+  profileImageUrl?: string;
+  isVerified?: boolean;
+  role: 'tenant' | 'landlord' | 'admin' | 'workman';
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum UserRole {

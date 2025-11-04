@@ -14,7 +14,9 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
+    console.log('Dashboard auth check:', { isLoading, isAuthenticated, hasUser: !!user, hasToken: !!user });
     if (!isLoading && !isAuthenticated) {
+      console.log('Not authenticated, redirecting to login');
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
@@ -43,7 +45,7 @@ export default function DashboardPage() {
               Welcome back, {user.firstName}!
             </h1>
             <p className="text-gray-600 mt-1">
-              {getRoleName(user.role)} Dashboard
+              {getRoleName(user.role as any)} Dashboard
             </p>
           </div>
           <div className="flex gap-3">
