@@ -104,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginData) => {
     try {
+      console.log('Attempting login with API URL:', process.env.NEXT_PUBLIC_API_URL);
       const response = await apiClient.post<{ token: string; refreshToken: string; user: User }>('/auth/login', credentials);
       
       setToken(response.token);
@@ -111,7 +112,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       apiClient.setTokens(response.token, response.refreshToken || null);
       storeAuth(response.token, response.refreshToken || '', response.user);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   };
