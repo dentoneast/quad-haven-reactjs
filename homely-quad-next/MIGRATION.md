@@ -95,6 +95,69 @@ The original `rently-mobile` application has been successfully migrated into a w
   - Select, Label components
   - Built with Radix UI primitives
 
+## Replit Deployment (November 2025)
+
+### ✅ Successfully Deployed on Replit
+
+The Homely Quad platform has been successfully deployed to Replit with full functionality:
+
+#### Infrastructure Setup
+- **Two-Workflow Architecture**:
+  - Server workflow: Runs backend API on port 3001 (internal)
+  - Web workflow: Runs Next.js frontend on port 5000 (public)
+  
+- **Database Configuration**:
+  - Integrated with Replit's built-in PostgreSQL database
+  - Automatic connection via `DATABASE_URL` environment variable
+  - Database seeding with comprehensive sample data
+
+- **API Proxy Setup**:
+  - Created Next.js API route at `/api/[...proxy]` to forward browser requests
+  - Configured environment variable override in workflow command
+  - Resolved Replit's port accessibility limitations
+
+#### Critical Fixes (November 4, 2025)
+
+**1. API Response Structure**
+- **Issue**: Backend returns `{success: true, data: {...}}` but frontend expected unwrapped data
+- **Fix**: Updated `api-client.ts` to automatically unwrap the `data` property from API responses
+- **Impact**: Authentication, user data, and all API calls now work correctly
+
+**2. User Type Definition**
+- **Issue**: User interface used `snake_case` properties (e.g., `first_name`) but API returns `camelCase` (e.g., `firstName`)
+- **Fix**: Updated User type in `shared/types/index.ts` to use `camelCase` consistently
+- **Fields Changed**: `first_name` → `firstName`, `last_name` → `lastName`, `user_type` → `role`, `is_verified` → `isVerified`, etc.
+- **Impact**: Dashboard and all user-related features now display correctly
+
+**3. Environment Variable Configuration**
+- **Issue**: Replit OS environment variable `NEXT_PUBLIC_API_URL=http://localhost:3001/api` was overriding `.env.local`
+- **Fix**: Updated web workflow command to explicitly set `NEXT_PUBLIC_API_URL=/api`
+- **Command**: `cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev`
+- **Impact**: Browser requests now correctly route through Next.js proxy instead of trying to access port 3001 directly
+
+**4. Authentication Flow**
+- **Issue**: Login succeeded but navigation to dashboard failed due to API response structure mismatch
+- **Fix**: Corrected api-client unwrapping logic to properly extract user and token data
+- **Impact**: Complete login flow now works: login → store credentials → navigate to dashboard
+
+#### Test Credentials
+All seeded users use password: `password123`
+
+| Role | Email | Purpose |
+|------|-------|---------|
+| Landlord | sarah.landlord@example.com | Property and lease management testing |
+| Tenant | mike.tenant@example.com | Tenant features and maintenance requests |
+| Admin | admin@homelyquad.com | Full system administration |
+| Workman | bob.workman@example.com | Maintenance work order management |
+
+#### Database Seeding
+- 10 users across all roles
+- 5 properties with multiple units each
+- 5 active leases
+- 6 maintenance requests (various statuses)
+- 12 payment records
+- 11 messages in conversations
+
 ## Key Features Migrated
 
 ### 🏢 Property Management

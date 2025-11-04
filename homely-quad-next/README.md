@@ -148,6 +148,112 @@ npm run dev:mobile
 npm run dev:shared
 ```
 
+## 🚀 Replit Deployment
+
+This project is configured to run on Replit with the following setup:
+
+### Workflow Configuration
+
+The application uses two workflows on Replit:
+
+1. **Server Workflow** (Backend API)
+   ```bash
+   cd homely-quad-next/packages/server && npm run dev
+   ```
+   - Runs on port 3001 (internal only)
+   - Provides REST API endpoints
+   - Connected to Replit PostgreSQL database
+
+2. **Web Workflow** (Frontend)
+   ```bash
+   cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev
+   ```
+   - Runs on port 5000 (publicly accessible)
+   - Next.js application with API proxy
+   - Environment variable override for Replit deployment
+
+### Important Replit Configuration
+
+**Port Configuration:**
+- Only port 5000 is publicly accessible on Replit
+- Backend (port 3001) is internal-only
+- Frontend uses Next.js API proxy route (`/api/[...proxy]`) to forward requests to internal backend
+
+**Environment Variables:**
+- `NEXT_PUBLIC_API_URL=/api` - Set in web workflow command to override Replit OS environment
+- This ensures browser requests go through the Next.js proxy instead of directly to port 3001
+
+**Database:**
+- Uses Replit's built-in PostgreSQL database
+- Connection configured via `DATABASE_URL` environment variable
+- Automatic connection on server startup
+
+### Authentication Flow (Fixed November 4, 2025)
+
+The login system has been fully configured and tested on Replit:
+
+**Key Fixes:**
+1. **API Response Unwrapping** - Updated api-client to handle `{success, data}` response structure from backend
+2. **User Type Definition** - Changed User interface from `snake_case` to `camelCase` to match API response
+3. **Environment Configuration** - Configured workflow to override Replit OS environment variable
+4. **Navigation Flow** - Fixed authentication state management for proper dashboard navigation
+
+**Test Credentials:**
+All users have password: `password123`
+
+| Role | Email | Access Level |
+|------|-------|-------------|
+| Landlord | sarah.landlord@example.com | Property management, lease approval |
+| Tenant | mike.tenant@example.com | View leases, submit maintenance requests |
+| Admin | admin@homelyquad.com | Full system access |
+| Workman | bob.workman@example.com | Maintenance work orders |
+
+**Login Flow:**
+1. User enters credentials on `/login` page
+2. Frontend sends POST to `/api/auth/login` (Next.js proxy)
+3. Proxy forwards to backend at `http://localhost:3001/api/auth/login`
+4. Backend validates against PostgreSQL database
+5. Returns JWT token + user data in camelCase format
+6. Frontend stores credentials in localStorage
+7. Navigates to role-based dashboard
+
+### Database Setup on Replit
+
+The database is automatically seeded with sample data:
+
+```bash
+# Reset and seed database
+npm run db:reset
+
+# Push schema changes only
+npm run db:push
+```
+
+**Seeded Data:**
+- 10 users (tenants, landlords, workmen, admins)
+- 5 properties with multiple units
+- 5 active leases
+- 6 maintenance requests
+- 12 payment records
+- 11 messages
+
+### Troubleshooting on Replit
+
+**Login Issues:**
+- Clear browser cache if seeing old authentication data
+- Check browser console for API errors
+- Verify both workflows are running
+
+**API Errors:**
+- Ensure `NEXT_PUBLIC_API_URL=/api` is set in web workflow command
+- Restart workflows if backend changes aren't reflected
+- Check server logs for database connection issues
+
+**Database Issues:**
+- Run `npm run db:push --force` to sync schema changes
+- Check `DATABASE_URL` environment variable is set
+- Verify PostgreSQL database is running in Replit
+
 ## 📱 Mobile App (React Native)
 
 ### Features

@@ -2,6 +2,117 @@
 
 This guide covers deploying the Homely Quad monorepo applications to various environments. The project was migrated from the monolithic Rently Mobile application into a scalable monorepo structure.
 
+## 🚀 Replit Deployment (Recommended for Development)
+
+Homely Quad is fully configured to run on Replit with minimal setup.
+
+### Prerequisites
+- Active Replit account
+- Replit PostgreSQL database enabled
+
+### Quick Start on Replit
+
+1. **Import Project to Replit**
+   - Fork or import this repository to Replit
+   - Replit will automatically detect the Node.js environment
+
+2. **Database Setup**
+   The project uses Replit's built-in PostgreSQL database:
+   ```bash
+   # Database is automatically connected via DATABASE_URL
+   # Push schema and seed data
+   npm run db:reset
+   ```
+
+3. **Workflow Configuration**
+   The project has two pre-configured workflows:
+   
+   - **Server Workflow**: Backend API (port 3001, internal)
+     ```bash
+     cd homely-quad-next/packages/server && npm run dev
+     ```
+   
+   - **Web Workflow**: Frontend (port 5000, public)
+     ```bash
+     cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev
+     ```
+
+4. **Start the Application**
+   - Both workflows start automatically when you run the Repl
+   - Access the application at the Replit webview URL (port 5000)
+
+### Important Replit Configuration
+
+**Environment Variables:**
+- `DATABASE_URL` - Automatically provided by Replit PostgreSQL
+- `JWT_SECRET` - Auto-generated, stored in Replit Secrets
+- `JWT_REFRESH_SECRET` - Auto-generated, stored in Replit Secrets
+- `NEXT_PUBLIC_API_URL` - Set to `/api` in web workflow command
+
+**Port Configuration:**
+- Port 5000: Public (Next.js frontend)
+- Port 3001: Internal only (Express backend)
+- Frontend uses Next.js API proxy at `/api/[...proxy]` to access backend
+
+**API Proxy Setup:**
+The frontend cannot directly access port 3001 from the browser on Replit. Instead:
+1. Browser sends requests to `/api/*` 
+2. Next.js API route at `/api/[...proxy]` forwards to `http://localhost:3001/api/*`
+3. Backend processes the request and returns response
+4. Next.js proxy returns response to browser
+
+### Testing on Replit
+
+Login with these test credentials (password: `password123`):
+
+| Role | Email | Features |
+|------|-------|----------|
+| Landlord | sarah.landlord@example.com | Full property management |
+| Tenant | mike.tenant@example.com | View leases, submit requests |
+| Admin | admin@homelyquad.com | System administration |
+| Workman | bob.workman@example.com | Work order management |
+
+### Database Management on Replit
+
+```bash
+# Reset database and reseed
+npm run db:reset
+
+# Push schema changes only (preserves data)
+npm run db:push
+
+# Force push schema changes
+npm run db:push --force
+```
+
+### Troubleshooting on Replit
+
+**Login Not Working:**
+1. Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+2. Verify both workflows are running
+3. Check browser console for errors
+
+**API Errors:**
+1. Ensure `NEXT_PUBLIC_API_URL=/api` is in web workflow command
+2. Restart workflows after code changes
+3. Check server logs for detailed error messages
+
+**Database Connection Issues:**
+1. Verify `DATABASE_URL` environment variable exists
+2. Check PostgreSQL database is enabled in Replit
+3. Try restarting the Repl
+
+### Deployment to Production from Replit
+
+To publish your Replit to production:
+1. Click the "Publish" button in Replit
+2. Configure custom domain (optional)
+3. Replit will handle HTTPS automatically
+
+---
+
+## Production Deployment (Other Platforms)
+
 ## Overview
 
 The Homely Quad monorepo consists of four main packages:

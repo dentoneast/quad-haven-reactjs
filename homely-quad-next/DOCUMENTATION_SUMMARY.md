@@ -2,6 +2,23 @@
 
 This document provides an overview of all the updated documentation files in the Homely Quad project after the migration from the monolithic Rently Mobile application.
 
+## 🚀 Recent Updates (November 2025)
+
+### Replit Deployment & Login System Fixes
+- Successfully deployed to Replit with two-workflow architecture
+- Fixed authentication system with proper API response handling
+- Updated User type definition to match API response format (camelCase)
+- Configured environment variables for Replit deployment
+- Implemented Next.js API proxy for internal backend access
+- Added comprehensive test credentials and database seeding
+- Updated all documentation with Replit-specific instructions
+
+### Key Technical Achievements
+- **API Response Unwrapping**: Implemented automatic `{success, data}` response unwrapping in api-client
+- **Type Safety**: Aligned TypeScript types with actual API responses
+- **Environment Management**: Solved Replit OS environment variable override issues
+- **Complete Authentication Flow**: Login → credential storage → dashboard navigation working end-to-end
+
 ## 📚 Updated Documentation Files
 
 ### 1. Main README.md
@@ -14,6 +31,13 @@ This document provides an overview of all the updated documentation files in the
 - Updated API endpoints to match actual implementation
 - Added migration section explaining what was migrated and what was added
 - Updated environment variables to match actual configuration
+- **Added Replit Deployment Section (November 2025)**:
+  - Workflow configuration for server and web applications
+  - Port configuration and API proxy setup
+  - Environment variable management for Replit
+  - Authentication flow documentation with test credentials
+  - Database setup and seeding instructions
+  - Troubleshooting guide for common Replit issues
 
 ### 2. API Documentation
 **Location**: `homely-quad/docs/api.md`
