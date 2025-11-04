@@ -16,6 +16,13 @@ Homely Quad is a comprehensive rental property management platform designed as a
   - Web: `cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev`
   - Server: `cd homely-quad-next/packages/server && npm run dev`
 
+## Recent Changes (November 4, 2025)
+- **Login System Fixed**: Resolved authentication and navigation issues
+  - Fixed API response unwrapping in api-client (handles {success, data} structure)
+  - Updated User type to camelCase properties (firstName, role, etc.) to match API response
+  - Configured environment variable override in web workflow command
+  - Authentication flow now works correctly: login → store credentials → navigate to dashboard
+
 ## System Architecture
 The project is structured as a monorepo containing:
 -   **Web Application**: A Next.js 14.2.33 frontend (TypeScript) for a rich user experience.

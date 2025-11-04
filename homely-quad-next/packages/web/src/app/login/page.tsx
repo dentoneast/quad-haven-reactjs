@@ -42,10 +42,8 @@ export default function LoginPage() {
 
     try {
       await login(formData);
-      console.log('Login successful, navigating to dashboard...');
       router.push('/dashboard');
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err?.message || 'Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
