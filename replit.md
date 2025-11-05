@@ -17,6 +17,12 @@ Homely Quad is a comprehensive rental property management platform designed as a
   - Server: `cd homely-quad-next/packages/server && npm run dev`
 
 ## Recent Changes (November 5, 2025)
+- **Dashboard Folder Reorganization**: Restructured all dashboard pages under /dashboard folder for better organization
+  - Moved properties, leases, maintenance, payments, and profile pages from root app folder to /app/dashboard/*
+  - Updated all navigation links and breadcrumbs to use /dashboard/* paths consistently
+  - Fixed breadcrumb builder to preserve /dashboard prefix for nested pages
+  - Updated EditProfilePage redirect to use /dashboard/profile (from /profile)
+  - All dashboard routes now follow consistent pattern: /dashboard/{section}
 - **Responsive Layout Implementation**: Implemented mobile-first responsive design for public and dashboard pages
   - Added mobile hamburger menu with sliding sidebar for dashboard (hidden off-screen on mobile, visible on desktop)
   - Implemented mobile navigation menu for public home page with collapsible links
