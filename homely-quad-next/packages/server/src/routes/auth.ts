@@ -24,7 +24,7 @@ const validateRegister = [
 // Routes
 router.post('/login', validateLogin, authController.login);
 router.post('/register', validateRegister, authController.register);
-router.post('/logout', authenticateToken, authController.logout);
+router.post('/logout', authController.logout);
 router.get('/me', authenticateToken, authController.getCurrentUser);
 router.put('/profile', authenticateToken, authController.updateProfile);
 router.post('/change-password', authenticateToken, authController.changePassword);
