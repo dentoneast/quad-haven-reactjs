@@ -16,6 +16,17 @@ Homely Quad is a comprehensive rental property management platform designed as a
   - Web: `cd homely-quad-next/packages/web && NEXT_PUBLIC_API_URL=/api npm run dev`
   - Server: `cd homely-quad-next/packages/server && npm run dev`
 
+## Recent Changes (November 5, 2025)
+- **Responsive Layout Implementation**: Implemented mobile-first responsive design for public and dashboard pages
+  - Added mobile hamburger menu with sliding sidebar for dashboard (hidden off-screen on mobile, visible on desktop)
+  - Implemented mobile navigation menu for public home page with collapsible links
+  - Added proper accessibility attributes (aria-label, aria-expanded, aria-controls) for screen reader support
+  - Responsive breakpoints: mobile-first, md: tablet (768px+), lg: desktop (1024px+)
+  - Mobile overlay with backdrop for sidebar closes on click outside
+  - Responsive spacing adjustments (p-4 sm:p-6 lg:p-8) across all screen sizes
+- **Logout Endpoint Fixed**: Removed authentication requirement from /logout endpoint
+  - Users can now logout even with expired/invalid tokens (fixes 401 error)
+
 ## Recent Changes (November 4, 2025)
 - **Login System Fixed**: Resolved authentication and navigation issues
   - Fixed API response unwrapping in api-client (handles {success, data} structure)
@@ -38,10 +49,10 @@ The project is structured as a monorepo containing:
 -   **Property & Lease Management**: Full CRUD operations for properties and leases, including unit management, status tracking, and filtering capabilities.
 -   **Authentication & User Management**: Cross-platform JWT-based authentication with token refresh, role selection during registration, password reset flows, and profile management.
 -   **Database Seeding Infrastructure**: Comprehensive sample data system using Drizzle ORM with 10 users, 5 properties, 10 units, 5 leases, 6 maintenance requests, 12 payments, and 11 messages. Supports rapid development, testing, and demonstrations with realistic data across all user roles. Scripts available: `npm run db:seed` and `npm run db:reset`.
--   **Reusable Dashboard Layout**: Consistent UI component for all dashboard pages with responsive sidebar navigation, breadcrumbs, and role-based menu items.
+-   **Reusable Dashboard Layout**: Consistent UI component for all dashboard pages with fully responsive sidebar navigation (mobile hamburger menu, sliding sidebar, overlay), breadcrumbs, role-based menu items, and accessibility support (ARIA attributes for screen readers).
 -   **Type Safety**: Extensive use of TypeScript across all packages for improved code quality and maintainability.
 -   **Database**: PostgreSQL managed with Drizzle ORM, featuring a comprehensive schema for users, properties, units, leases, maintenance requests, and payments.
--   **UI/UX**: Responsive design principles applied across all web components, with color-coded badges and visual indicators for status and priority.
+-   **UI/UX**: Mobile-first responsive design across all web components with TailwindCSS breakpoints (sm: 640px, md: 768px, lg: 1024px), color-coded badges, visual indicators for status and priority, and WCAG-compliant accessibility features.
 
 ## External Dependencies
 -   **Frontend**: Next.js 14.2.33, React 18.2, TypeScript, TailwindCSS
