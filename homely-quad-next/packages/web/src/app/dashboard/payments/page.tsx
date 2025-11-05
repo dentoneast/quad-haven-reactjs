@@ -68,7 +68,7 @@ export default function PaymentsDashboardPage() {
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link
-          href="/payments/all"
+          href="/dashboard/payments/all"
           className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">All Payments</h3>
@@ -76,7 +76,7 @@ export default function PaymentsDashboardPage() {
         </Link>
 
         <Link
-          href="/payments/pending"
+          href="/dashboard/payments/pending"
           className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Pending Payments</h3>
@@ -84,7 +84,7 @@ export default function PaymentsDashboardPage() {
         </Link>
 
         <Link
-          href="/payments/overdue"
+          href="/dashboard/payments/overdue"
           className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Overdue Payments</h3>
@@ -100,7 +100,7 @@ export default function PaymentsDashboardPage() {
               Create payment records or record received payments
             </p>
             <div className="flex gap-3">
-              <Link href="/payments/record">
+              <Link href="/dashboard/payments/record">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Record Payment

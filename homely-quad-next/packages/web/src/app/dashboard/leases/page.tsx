@@ -60,7 +60,7 @@ export default function LeasesPage() {
             <p className="text-gray-600 mt-2">Manage lease agreements</p>
           </div>
           <Link
-            href="/leases/new"
+            href="/dashboard/leases/new"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
           >
             Create Lease
@@ -97,7 +97,7 @@ export default function LeasesPage() {
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-600 mb-4">No leases found.</p>
             <Link
-              href="/leases/new"
+              href="/dashboard/leases/new"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Create your first lease

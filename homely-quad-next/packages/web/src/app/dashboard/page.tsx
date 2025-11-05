@@ -19,7 +19,7 @@ export default function DashboardPage() {
       <div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/properties">
+          <Link href="/dashboard/properties">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <Building2 className="h-8 w-8 text-blue-600 mb-2" />
@@ -34,7 +34,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/leases">
+          <Link href="/dashboard/leases">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <Home className="h-8 w-8 text-green-600 mb-2" />
@@ -49,7 +49,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/maintenance">
+          <Link href="/dashboard/maintenance">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <Wrench className="h-8 w-8 text-orange-600 mb-2" />
@@ -64,7 +64,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/payments">
+          <Link href="/dashboard/payments">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <DollarSign className="h-8 w-8 text-emerald-600 mb-2" />
@@ -79,7 +79,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/messages">
+          <Link href="/dashboard/messages">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <MessageSquare className="h-8 w-8 text-purple-600 mb-2" />
@@ -107,7 +107,7 @@ export default function DashboardPage() {
                   <h3 className="font-semibold">Add Your First Property</h3>
                   <p className="text-sm text-gray-600">Start by adding a property to manage</p>
                 </div>
-                <Link href="/properties/new">
+                <Link href="/dashboard/properties/new">
                   <Button>Add Property</Button>
                 </Link>
               </div>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                   <h3 className="font-semibold">Browse Available Rentals</h3>
                   <p className="text-sm text-gray-600">Find your perfect home</p>
                 </div>
-                <Link href="/properties">
+                <Link href="/dashboard/properties">
                   <Button>Browse</Button>
                 </Link>
               </div>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
                 <h3 className="font-semibold">Update Your Profile</h3>
                 <p className="text-sm text-gray-600">Complete your profile information</p>
               </div>
-              <Link href="/profile/edit">
+              <Link href="/dashboard/profile/edit">
                 <Button variant="outline">Edit Profile</Button>
               </Link>
             </div>

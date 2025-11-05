@@ -117,7 +117,7 @@ export default function MaintenanceDashboardPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Link
-                href="/maintenance/requests/new"
+                href="/dashboard/maintenance/requests/new"
                 className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -132,7 +132,7 @@ export default function MaintenanceDashboardPage() {
               </Link>
 
               <Link
-                href="/maintenance/requests"
+                href="/dashboard/maintenance/requests"
                 className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">

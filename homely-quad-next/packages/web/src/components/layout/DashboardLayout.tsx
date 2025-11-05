@@ -68,7 +68,7 @@ export default function DashboardLayout({
     const paths = pathname.split('/').filter(Boolean);
     const breadcrumbs = [{ label: 'Dashboard', href: '/dashboard' }];
     
-    let currentPath = '';
+    let currentPath = '/dashboard';
     paths.forEach((path, index) => {
       if (path !== 'dashboard') {
         currentPath += `/${path}`;
@@ -89,33 +89,33 @@ export default function DashboardLayout({
     },
     {
       name: 'Properties',
-      href: '/properties',
+      href: '/dashboard/properties',
       icon: Building,
-      active: pathname.startsWith('/properties'),
+      active: pathname.startsWith('/dashboard/properties'),
     },
     {
       name: 'Leases',
-      href: '/leases',
+      href: '/dashboard/leases',
       icon: FileText,
-      active: pathname.startsWith('/leases'),
+      active: pathname.startsWith('/dashboard/leases'),
     },
     {
       name: 'Maintenance',
-      href: '/maintenance',
+      href: '/dashboard/maintenance',
       icon: Wrench,
-      active: pathname.startsWith('/maintenance'),
+      active: pathname.startsWith('/dashboard/maintenance'),
     },
     {
       name: 'Payments',
-      href: '/payments',
+      href: '/dashboard/payments',
       icon: DollarSign,
-      active: pathname.startsWith('/payments'),
+      active: pathname.startsWith('/dashboard/payments'),
     },
     {
       name: 'Messages',
-      href: '/messages',
+      href: '/dashboard/messages',
       icon: MessageSquare,
-      active: pathname.startsWith('/messages'),
+      active: pathname.startsWith('/dashboard/messages'),
     },
   ];
 
@@ -198,7 +198,7 @@ export default function DashboardLayout({
           </div>
           <div className="space-y-1">
             <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-              <Link href="/profile">
+              <Link href="/dashboard/profile">
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </Link>

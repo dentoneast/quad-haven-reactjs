@@ -65,7 +65,7 @@ export default function PropertiesPage() {
             <p className="text-gray-600 mt-2">Manage your rental properties</p>
           </div>
           <Link
-            href="/properties/new"
+            href="/dashboard/properties/new"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
           >
             Add Property
@@ -108,7 +108,7 @@ export default function PropertiesPage() {
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-600 mb-4">No properties found.</p>
             <Link
-              href="/properties/new"
+              href="/dashboard/properties/new"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Create your first property

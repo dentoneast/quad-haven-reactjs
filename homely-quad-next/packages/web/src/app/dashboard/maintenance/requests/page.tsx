@@ -63,7 +63,7 @@ export default function MaintenanceRequestsPage() {
             <p className="text-gray-600 mt-2">Track and manage all maintenance requests</p>
           </div>
           <Link
-            href="/maintenance/requests/new"
+            href="/dashboard/maintenance/requests/new"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
           >
             New Request
@@ -120,7 +120,7 @@ export default function MaintenanceRequestsPage() {
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-600 mb-4">No maintenance requests found.</p>
             <Link
-              href="/maintenance/requests/new"
+              href="/dashboard/maintenance/requests/new"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Create your first request

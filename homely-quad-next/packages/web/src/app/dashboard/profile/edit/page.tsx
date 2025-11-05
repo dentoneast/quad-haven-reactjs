@@ -72,7 +72,7 @@ export default function EditProfilePage() {
       });
       setSuccess(true);
       setTimeout(() => {
-        router.push('/profile');
+        router.push('/dashboard/profile');
       }, 1500);
     } catch (err: any) {
       setError(err?.message || 'Failed to update profile. Please try again.');
@@ -106,7 +106,7 @@ export default function EditProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto p-6">
-        <Link href="/profile">
+        <Link href="/dashboard/profile">
           <Button variant="ghost" className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
@@ -200,7 +200,7 @@ export default function EditProfilePage() {
                 <Button type="submit" disabled={isSubmitting} className="flex-1">
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Link href="/profile" className="flex-1">
+                <Link href="/dashboard/profile" className="flex-1">
                   <Button type="button" variant="outline" className="w-full">
                     Cancel
                   </Button>

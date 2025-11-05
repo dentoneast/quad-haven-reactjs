@@ -51,7 +51,7 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
             <p className="text-gray-600 mt-1">View and manage your account information</p>
           </div>
-          <Link href="/profile/edit">
+          <Link href="/dashboard/profile/edit">
             <Button>
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
@@ -151,13 +151,13 @@ export default function ProfilePage() {
             <CardDescription>Manage your account settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/profile/edit">
+            <Link href="/dashboard/profile/edit">
               <Button variant="outline" className="w-full justify-start">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile Information
               </Button>
             </Link>
-            <Link href="/profile/change-password">
+            <Link href="/dashboard/profile/change-password">
               <Button variant="outline" className="w-full justify-start">
                 Change Password
               </Button>
