@@ -4,7 +4,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, User, Home, ArrowLeft, HomeIcon } from 'lucide-react';
+import { 
+  Building2, 
+  User, 
+  Home, 
+  ArrowLeft, 
+  HomeIcon,
+  LayoutDashboard,
+  Building,
+  FileText,
+  Wrench,
+  DollarSign,
+  MessageSquare,
+  LogOut
+} from 'lucide-react';
 import Link from 'next/link';
 import { getRoleName } from '@/lib/auth';
 
@@ -64,139 +77,146 @@ export default function DashboardLayout({
     return breadcrumbs;
   };
 
-  const breadcrumbs = getBreadcrumbs();
+  const navigationItems = [
+    {
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      active: pathname === '/dashboard',
+    },
+    {
+      name: 'Properties',
+      href: '/properties',
+      icon: Building,
+      active: pathname.startsWith('/properties'),
+    },
+    {
+      name: 'Leases',
+      href: '/leases',
+      icon: FileText,
+      active: pathname.startsWith('/leases'),
+    },
+    {
+      name: 'Maintenance',
+      href: '/maintenance',
+      icon: Wrench,
+      active: pathname.startsWith('/maintenance'),
+    },
+    {
+      name: 'Payments',
+      href: '/payments',
+      icon: DollarSign,
+      active: pathname.startsWith('/payments'),
+    },
+    {
+      name: 'Messages',
+      href: '/messages',
+      icon: MessageSquare,
+      active: pathname.startsWith('/messages'),
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-blue-600" />
-                <span className="text-xl font-bold text-gray-900">Homely Quad</span>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            <span className="text-xl font-bold text-gray-900">Homely Quad</span>
+          </Link>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-1">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  item.active
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.name}
               </Link>
-              <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={crumb.href} className="flex items-center gap-2">
-                    {index > 0 && <span>/</span>}
-                    {index === breadcrumbs.length - 1 ? (
-                      <span className="font-medium text-gray-900">{crumb.label}</span>
-                    ) : (
-                      <Link href={crumb.href} className="hover:text-blue-600">
-                        {crumb.label}
-                      </Link>
-                    )}
-                  </div>
-                ))}
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t border-gray-200"></div>
+
+          {/* Public Home Link */}
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <HomeIcon className="h-5 w-5" />
+            Public Home
+          </Link>
+        </nav>
+
+        {/* Sidebar Footer - User Info */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-600" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
-                <p className="text-xs text-gray-500">{getRoleName(user.role)}</p>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/">
-                  <HomeIcon className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Home</span>
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/profile">
-                  <User className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Profile</span>
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" onClick={logout}>
-                Logout
-              </Button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.firstName} {user.lastName}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{getRoleName(user.role)}</p>
             </div>
           </div>
-        </div>
-      </header>
-
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6 overflow-x-auto">
-            <Link
-              href="/dashboard"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname === '/dashboard'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Home className="h-4 w-4 inline mr-1" />
-              Home
-            </Link>
-            <Link
-              href="/properties"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname.startsWith('/properties')
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Properties
-            </Link>
-            <Link
-              href="/leases"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname.startsWith('/leases')
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Leases
-            </Link>
-            <Link
-              href="/maintenance"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname.startsWith('/maintenance')
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Maintenance
-            </Link>
-            <Link
-              href="/payments"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname.startsWith('/payments')
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Payments
-            </Link>
-            <Link
-              href="/messages"
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                pathname.startsWith('/messages')
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Messages
-            </Link>
+          <div className="space-y-1">
+            <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+              <Link href="/profile">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="w-full justify-start" onClick={logout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
-      </nav>
+      </aside>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          {showBackButton && (
-            <Link href={backHref} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
-            </Link>
-          )}
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {description && <p className="text-gray-600 mt-2">{description}</p>}
-        </div>
-        {children}
-      </main>
+      {/* Main Content Area */}
+      <div className="flex-1 ml-64">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
+              </div>
+              {showBackButton && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={backHref}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

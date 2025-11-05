@@ -41,22 +41,26 @@ export const canCompleteWorkOrders = (userRole: UserRole | undefined): boolean =
   return hasRole(userRole, ['workman', 'landlord', 'admin']);
 };
 
-export const getRoleName = (role: UserRole | undefined): string => {
-  const roleNames: Record<UserRole, string> = {
+export const getRoleName = (role: string | undefined): string => {
+  if (!role) return 'Unknown';
+  
+  const roleNames: Record<string, string> = {
     tenant: 'Tenant',
     landlord: 'Landlord',
     workman: 'Workman',
     admin: 'Administrator',
   };
-  return role ? roleNames[role] : 'Unknown';
+  return roleNames[role] || 'Unknown';
 };
 
-export const getRoleColor = (role: UserRole | undefined): string => {
-  const roleColors: Record<UserRole, string> = {
+export const getRoleColor = (role: string | undefined): string => {
+  if (!role) return 'gray';
+  
+  const roleColors: Record<string, string> = {
     tenant: 'blue',
     landlord: 'green',
     workman: 'orange',
     admin: 'purple',
   };
-  return role ? roleColors[role] : 'gray';
+  return roleColors[role] || 'gray';
 };
