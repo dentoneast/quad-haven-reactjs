@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,16 +15,20 @@ import {
   CheckCircle,
   ArrowRight,
   Star,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -31,12 +36,12 @@ export default function HomePage() {
               <span className="ml-2 text-xl font-bold text-gray-900">Homely Quad</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-gray-900">Features</Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
-              <Link href="#about" className="text-gray-600 hover:text-gray-900">About</Link>
-              <Link href="#contact" className="text-gray-600 hover:text-gray-900">Contact</Link>
+              <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
+              <Link href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link>
+              <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</Link>
+              <Link href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</Link>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
                 <Button asChild>
                   <Link href="/dashboard">
@@ -55,7 +60,77 @@ export default function HomePage() {
                 </>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              aria-label="Toggle mobile menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div id="mobile-menu" className="md:hidden py-4 border-t border-gray-200">
+              <div className="flex flex-col space-y-4">
+                <Link 
+                  href="#features" 
+                  className="text-gray-600 hover:text-gray-900 px-4 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </Link>
+                <Link 
+                  href="#pricing" 
+                  className="text-gray-600 hover:text-gray-900 px-4 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </Link>
+                <Link 
+                  href="#about" 
+                  className="text-gray-600 hover:text-gray-900 px-4 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About
+                </Link>
+                <Link 
+                  href="#contact" 
+                  className="text-gray-600 hover:text-gray-900 px-4 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Contact
+                </Link>
+                <div className="px-4 pt-2 space-y-2">
+                  {isAuthenticated ? (
+                    <Button className="w-full" asChild>
+                      <Link href="/dashboard">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Go to Dashboard
+                      </Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="w-full" asChild>
+                        <Link href="/login">Sign In</Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link href="/register">Get Started</Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 

@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Building2, 
@@ -16,7 +16,9 @@ import {
   Wrench,
   DollarSign,
   MessageSquare,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { getRoleName } from '@/lib/auth';
@@ -39,6 +41,7 @@ export default function DashboardLayout({
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -117,9 +120,25 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0">
+      <aside 
+        id="dashboard-sidebar"
+        className={`
+          w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-50
+          transform transition-transform duration-300 ease-in-out
+          lg:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-200">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -135,6 +154,7 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   item.active
                     ? 'bg-blue-50 text-blue-600'
@@ -153,6 +173,7 @@ export default function DashboardLayout({
           {/* Public Home Link */}
           <Link
             href="/"
+            onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <HomeIcon className="h-5 w-5" />
@@ -191,20 +212,37 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64">
+      <div className="lg:ml-64">
         {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-          <div className="px-8 py-4">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-                {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
+              <div className="flex items-center gap-4">
+                {/* Mobile Menu Button */}
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  aria-label="Toggle sidebar"
+                  aria-expanded={sidebarOpen}
+                  aria-controls="dashboard-sidebar"
+                >
+                  {sidebarOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
+                </button>
+
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
+                  {description && <p className="text-sm text-gray-600 mt-1 hidden sm:block">{description}</p>}
+                </div>
               </div>
               {showBackButton && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={backHref}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back
+                    <span className="hidden sm:inline">Back</span>
                   </Link>
                 </Button>
               )}
@@ -213,7 +251,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Main Content */}
-        <main className="p-8">
+        <main className="p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
