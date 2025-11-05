@@ -1,43 +1,41 @@
-import type { UserRole } from '@homely-quad/shared/types';
-
-export const hasRole = (userRole: UserRole | undefined, allowedRoles: UserRole[]): boolean => {
+export const hasRole = (userRole: string | undefined, allowedRoles: string[]): boolean => {
   if (!userRole) return false;
   return allowedRoles.includes(userRole);
 };
 
-export const isLandlord = (userRole: UserRole | undefined): boolean => {
+export const isLandlord = (userRole: string | undefined): boolean => {
   return userRole === 'landlord';
 };
 
-export const isTenant = (userRole: UserRole | undefined): boolean => {
+export const isTenant = (userRole: string | undefined): boolean => {
   return userRole === 'tenant';
 };
 
-export const isWorkman = (userRole: UserRole | undefined): boolean => {
+export const isWorkman = (userRole: string | undefined): boolean => {
   return userRole === 'workman';
 };
 
-export const isAdmin = (userRole: UserRole | undefined): boolean => {
+export const isAdmin = (userRole: string | undefined): boolean => {
   return userRole === 'admin';
 };
 
-export const canManageProperties = (userRole: UserRole | undefined): boolean => {
+export const canManageProperties = (userRole: string | undefined): boolean => {
   return hasRole(userRole, ['landlord', 'admin']);
 };
 
-export const canSubmitMaintenanceRequests = (userRole: UserRole | undefined): boolean => {
+export const canSubmitMaintenanceRequests = (userRole: string | undefined): boolean => {
   return hasRole(userRole, ['tenant', 'landlord', 'admin']);
 };
 
-export const canApproveMaintenanceRequests = (userRole: UserRole | undefined): boolean => {
+export const canApproveMaintenanceRequests = (userRole: string | undefined): boolean => {
   return hasRole(userRole, ['landlord', 'admin']);
 };
 
-export const canAssignWorkOrders = (userRole: UserRole | undefined): boolean => {
+export const canAssignWorkOrders = (userRole: string | undefined): boolean => {
   return hasRole(userRole, ['landlord', 'admin']);
 };
 
-export const canCompleteWorkOrders = (userRole: UserRole | undefined): boolean => {
+export const canCompleteWorkOrders = (userRole: string | undefined): boolean => {
   return hasRole(userRole, ['workman', 'landlord', 'admin']);
 };
 
