@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, User, Home, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Building2, User, Home, ArrowLeft, HomeIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getRoleName } from '@/lib/auth';
 
@@ -96,18 +96,18 @@ export default function DashboardLayout({
                 <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
                 <p className="text-xs text-gray-500">{getRoleName(user.role)}</p>
               </div>
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  <ExternalLink className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Public Site</span>
-                </Button>
-              </Link>
-              <Link href="/profile">
-                <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/">
+                  <HomeIcon className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Home</span>
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/profile">
                   <User className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Profile</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <Button variant="outline" size="sm" onClick={logout}>
                 Logout
               </Button>
